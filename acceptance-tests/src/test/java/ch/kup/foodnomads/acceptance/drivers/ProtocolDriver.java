@@ -13,6 +13,8 @@ public interface ProtocolDriver extends AutoCloseable {
 
     SystemDriver system();
 
+    MemberDriver members();
+
     @Override
     void close();
 

@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{msg:join_title}</title>
+    <script src="/q/webauthn/webauthn.js"></script>
+</head>
+<body>
+<main id="join">
+    <h1>{msg:join_title}</h1>
+    <p>{msg:join_intro}</p>
+    <form id="join-form">
+        <label for="display-name">{msg:join_display_name}</label>
+        <input id="display-name" name="displayName" required maxlength="100" autocomplete="nickname">
+        <button id="join-button" type="submit">{msg:join_submit}</button>
+    </form>
+    <p id="join-error" role="alert" hidden>{msg:join_failed}</p>
+</main>
+<script>
+    const token = "{token}";
+    const form = document.getElementById("join-form");
+    form.addEventListener("submit", async event => {
+        event.preventDefault();
+        document.getElementById("join-error").hidden = true;
+        const displayName = form.displayName.value.trim();
+        const webAuthn = new WebAuthn({ registerOptionsChallengePath: "/api/join/" + token + "/options" });
+        try {
+            const credential = await webAuthn.registerClientSteps({ username: displayName, displayName });
+            const response = await fetch("/api/join/" + token, {
+                method: "POST",
+                headers: { "Content-Type": "application/json", "Accept": "application/json" },
+                body: JSON.stringify({ displayName, credential })
+            });
+            if (!response.ok) {
+                throw new Error("Join failed with " + response.status);
+            }
+            window.location.href = "/";
+        } catch (error) {
+            console.error(error);
+            document.getElementById("join-error").hidden = false;
+        }
+    });
+</script>
+</body>
+</html>

@@ -8,6 +8,9 @@
 <body>
 <main id="home">
     <h1>{msg:app_name}</h1>
+    {#if currentMember}
+    <p>{msg:home_logged_in_as}: <span id="current-member">{currentMember}</span></p>
+    {/if}
     <p>{msg:home_placeholder}</p>
 </main>
 </body>

@@ -1,5 +1,6 @@
 package ch.kup.foodnomads.acceptance.drivers.ui;
 
+import ch.kup.foodnomads.acceptance.drivers.MemberDriver;
 import ch.kup.foodnomads.acceptance.drivers.ProtocolDriver;
 import ch.kup.foodnomads.acceptance.drivers.SystemDriver;
 import com.microsoft.playwright.Browser;
@@ -17,16 +18,23 @@ public class UiProtocolDriver implements ProtocolDriver {
     private final BrowserContext context;
     private final Page page;
     private final URI baseUrl;
+    private final VirtualAuthenticator authenticator;
 
     public UiProtocolDriver(URI baseUrl) {
         this.baseUrl = baseUrl;
         this.context = SharedBrowser.INSTANCE.newContext(phone());
         this.page = context.newPage();
+        this.authenticator = new VirtualAuthenticator(context.newCDPSession(page));
     }
 
     @Override
     public SystemDriver system() {
         return new UiSystemDriver(page, baseUrl);
+    }
+
+    @Override
+    public MemberDriver members() {
+        return new UiMemberDriver(page, baseUrl, authenticator);
     }
 
     @Override

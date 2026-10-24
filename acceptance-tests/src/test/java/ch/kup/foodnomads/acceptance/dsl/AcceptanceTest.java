@@ -13,11 +13,14 @@ public abstract class AcceptanceTest {
     private ProtocolDriver driver;
 
     protected SystemDsl system;
+    protected MembersDsl members;
 
     @BeforeEach
     void setUpDsl() {
+        Founder.ensureJoined();
         driver = ProtocolDriver.selected();
         system = new SystemDsl(driver.system());
+        members = new MembersDsl(driver.members());
     }
 
     @AfterEach
