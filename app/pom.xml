@@ -16,6 +16,7 @@
     <properties>
         <quarkus.platform.version>3.40.1.1</quarkus.platform.version>
         <quarkus.container-image.image>${app.image}</quarkus.container-image.image>
+        <htmx.version>2.0.11</htmx.version>
     </properties>
 
     <dependencyManagement>
@@ -38,6 +39,15 @@
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-rest-qute</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-web-dependency-locator</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.webjars.npm</groupId>
+            <artifactId>htmx.org</artifactId>
+            <version>${htmx.version}</version>
         </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>

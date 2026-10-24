@@ -44,6 +44,27 @@ public interface Messages {
     String venues_empty();
 
     @Message
+    String venues_propose_title();
+
+    @Message
+    String venues_name();
+
+    @Message
+    String venues_address();
+
+    @Message
+    String venues_propose();
+
+    @Message
+    String venues_name_required();
+
+    @Message
+    String venues_candidates();
+
+    @Message
+    String venues_proposed_by();
+
+    @Message
     String join_title();
 
     @Message

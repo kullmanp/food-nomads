@@ -4,11 +4,55 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{msg:venues_title}</title>
+    <!-- Swap 422 responses too, so a rejected proposal shows its error. -->
+    <meta name="htmx-config" content='{"responseHandling":[{"code":"204","swap":false},{"code":"[23]..","swap":true},{"code":"422","swap":true},{"code":"[45]..","swap":false,"error":true}]}'>
+    <script src="/webjars/htmx.org/dist/htmx.min.js"></script>
+    <style>
+        body { margin: 0; font-family: system-ui, sans-serif; line-height: 1.4; }
+        main { max-width: 40rem; margin: 0 auto; padding: 1rem; }
+        form { display: grid; gap: 0.5rem; margin-bottom: 1.5rem; }
+        input, button { font: inherit; padding: 0.6rem; }
+        [role=alert] { color: #b00020; margin: 0; }
+        ul { list-style: none; padding: 0; margin: 0; }
+        .candidate { padding: 0.75rem 0; border-top: 1px solid #ddd; }
+        .candidate h3 { margin: 0; font-size: 1.1rem; }
+        .candidate p { margin: 0.2rem 0 0; color: #555; }
+    </style>
 </head>
 <body>
 <main id="venues">
     <h1>{msg:venues_title}</h1>
+
+    <form id="propose-form" method="post" action="/venues"
+          hx-post="/venues" hx-target="#venues" hx-select="#venues" hx-swap="outerHTML">
+        <h2>{msg:venues_propose_title}</h2>
+        <label for="venue-name">{msg:venues_name}</label>
+        <input id="venue-name" name="name" value="{draft.name}" maxlength="200" autocomplete="off">
+        <label for="venue-address">{msg:venues_address}</label>
+        <input id="venue-address" name="address" value="{draft.address}" maxlength="300" autocomplete="off">
+        {#if draft.rejected}
+        <p id="propose-error" role="alert">{msg:venues_name_required}</p>
+        {/if}
+        <button id="propose-button" type="submit">{msg:venues_propose}</button>
+    </form>
+
+    <h2>{msg:venues_candidates}</h2>
+    {#if candidates.isEmpty}
     <p id="no-venues">{msg:venues_empty}</p>
+    {#else}
+    <ul id="candidates">
+        {#for candidate in candidates}
+        <li class="candidate">
+            <h3 class="venue-name">{candidate.name}</h3>
+            {#if candidate.address}
+            <p class="venue-address">{candidate.address}</p>
+            {/if}
+            <p>{msg:venues_proposed_by} <span class="venue-proposed-by">{candidate.proposedBy}</span>,
+                <time datetime="{candidate.proposedAt}">{candidate.proposedOn}</time></p>
+        </li>
+        {/for}
+    </ul>
+    {/if}
 </main>
 </body>
 </html>
