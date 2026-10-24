@@ -1,5 +1,6 @@
 package ch.kup.foodnomads.acceptance.drivers.ui;
 
+import ch.kup.foodnomads.acceptance.drivers.MemberDriver;
 import ch.kup.foodnomads.acceptance.drivers.ProtocolDriver;
 import ch.kup.foodnomads.acceptance.drivers.SystemDriver;
 import com.microsoft.playwright.Browser;
@@ -27,6 +28,11 @@ public class UiProtocolDriver implements ProtocolDriver {
     @Override
     public SystemDriver system() {
         return new UiSystemDriver(page, baseUrl);
+    }
+
+    @Override
+    public MemberDriver members() {
+        return new UiMemberDriver();
     }
 
     @Override

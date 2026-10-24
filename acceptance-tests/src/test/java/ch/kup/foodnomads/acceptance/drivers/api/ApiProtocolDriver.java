@@ -1,5 +1,6 @@
 package ch.kup.foodnomads.acceptance.drivers.api;
 
+import ch.kup.foodnomads.acceptance.drivers.MemberDriver;
 import ch.kup.foodnomads.acceptance.drivers.ProtocolDriver;
 import ch.kup.foodnomads.acceptance.drivers.SystemDriver;
 import java.net.URI;
@@ -18,6 +19,11 @@ public class ApiProtocolDriver implements ProtocolDriver {
     @Override
     public SystemDriver system() {
         return new ApiSystemDriver(http, baseUrl);
+    }
+
+    @Override
+    public MemberDriver members() {
+        return new ApiMemberDriver();
     }
 
     @Override

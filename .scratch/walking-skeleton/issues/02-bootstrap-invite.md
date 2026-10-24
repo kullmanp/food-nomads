@@ -1,6 +1,6 @@
 # 02 Bootstrap Invite and passkey registration
 
-Status: ready-for-agent
+Status: claimed
 Blocked by: 01
 Spec: [../spec.md](../spec.md)
 

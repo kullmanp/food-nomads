@@ -31,6 +31,12 @@ public final class SystemUnderTest {
         return URI.create("http://" + app.getHost() + ":" + app.getMappedPort(APP_PORT) + "/");
     }
 
+    /** The join URL of the Bootstrap Invite, as the app logged it at startup. */
+    public URI bootstrapInviteUrl() {
+        throw new UnsupportedOperationException(
+                "Not implemented yet: the app logs the Bootstrap Invite join URL at startup");
+    }
+
     private static final class Holder {
         static final SystemUnderTest INSTANCE = start();
     }
