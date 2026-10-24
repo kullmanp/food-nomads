@@ -14,6 +14,7 @@ public abstract class AcceptanceTest {
 
     protected SystemDsl system;
     protected MembersDsl members;
+    protected VenuesDsl venues;
 
     @BeforeEach
     void setUpDsl() {
@@ -21,6 +22,7 @@ public abstract class AcceptanceTest {
         driver = ProtocolDriver.selected();
         system = new SystemDsl(driver.system());
         members = new MembersDsl(driver.members());
+        venues = new VenuesDsl(driver.venues());
     }
 
     @AfterEach

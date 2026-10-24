@@ -43,6 +43,24 @@ class ApiMemberDriver implements MemberDriver {
     }
 
     @Override
+    public void logIn(String displayName) {
+        throw new UnsupportedOperationException(
+                "Not implemented yet: log in through the WebAuthn login ceremony with the Member's imported passkey");
+    }
+
+    @Override
+    public void logOut() {
+        throw new UnsupportedOperationException(
+                "Not implemented yet: log out through /api");
+    }
+
+    @Override
+    public void assertLoggedOut() {
+        throw new UnsupportedOperationException(
+                "Not implemented yet: GET /api/me answers 401 once logged out");
+    }
+
+    @Override
     public void assertBootstrapInviteRejected(URI joinUrl) {
         String joinPath = joinApiPath(joinUrl);
 

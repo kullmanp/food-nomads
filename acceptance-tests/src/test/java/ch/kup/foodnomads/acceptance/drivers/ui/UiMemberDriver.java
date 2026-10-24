@@ -37,6 +37,24 @@ class UiMemberDriver implements MemberDriver {
     }
 
     @Override
+    public void logIn(String displayName) {
+        throw new UnsupportedOperationException(
+                "Not implemented yet: log in on the login page with the Member's passkey imported into the virtual authenticator");
+    }
+
+    @Override
+    public void logOut() {
+        throw new UnsupportedOperationException(
+                "Not implemented yet: log out from the page");
+    }
+
+    @Override
+    public void assertLoggedOut() {
+        throw new UnsupportedOperationException(
+                "Not implemented yet: the page shows no logged-in Member once logged out");
+    }
+
+    @Override
     public void assertBootstrapInviteRejected(URI joinUrl) {
         page.navigate(joinUrl.toString());
 

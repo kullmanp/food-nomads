@@ -1,6 +1,6 @@
 # 03 Log in and log out with a passkey
 
-Status: ready-for-agent
+Status: claimed
 Blocked by: 02
 Spec: [../spec.md](../spec.md)
 
