@@ -18,6 +18,24 @@ class UiVenueDriver implements VenueDriver {
     }
 
     @Override
+    public void propose(String name, String address) {
+        throw new UnsupportedOperationException(
+                "Not implemented yet: submit the propose form on the Venue list page");
+    }
+
+    @Override
+    public void assertProposalRejected(String name, String address) {
+        throw new UnsupportedOperationException(
+                "Not implemented yet: the propose form shows an error for a Venue without a name");
+    }
+
+    @Override
+    public void assertCandidate(String name, String address, String proposedBy) {
+        throw new UnsupportedOperationException(
+                "Not implemented yet: the Venue list page shows the Venue with its address and proposing Member");
+    }
+
+    @Override
     public void assertNotAccessibleWithoutLogin() {
         page.navigate(baseUrl.resolve("venues").toString());
 
