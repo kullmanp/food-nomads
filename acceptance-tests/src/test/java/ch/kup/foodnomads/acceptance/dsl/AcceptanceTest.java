@@ -1,6 +1,7 @@
 package ch.kup.foodnomads.acceptance.dsl;
 
 import ch.kup.foodnomads.acceptance.drivers.ProtocolDriver;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 
 /**
@@ -9,11 +10,20 @@ import org.junit.jupiter.api.BeforeEach;
  */
 public abstract class AcceptanceTest {
 
+    private ProtocolDriver driver;
+
     protected SystemDsl system;
 
     @BeforeEach
     void setUpDsl() {
-        ProtocolDriver driver = ProtocolDriver.selected();
+        driver = ProtocolDriver.selected();
         system = new SystemDsl(driver.system());
+    }
+
+    @AfterEach
+    void closeDriver() {
+        if (driver != null) {
+            driver.close();
+        }
     }
 }

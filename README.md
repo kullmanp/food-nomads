@@ -25,8 +25,10 @@ Domain terms are defined in [GLOSSARY.md](GLOSSARY.md).
 
 ## Running locally
 
+Requires Java 25 and Docker.
+
 ```sh
-./mvnw quarkus:dev
+./mvnw quarkus:dev -pl app
 ```
 
 Dev Services starts PostgreSQL automatically (Docker required). Dev mode loads made-up seed data and offers a "log in as …" picker, so you don't need a passkey. That picker exists only in dev mode.
@@ -37,6 +39,8 @@ Dev Services starts PostgreSQL automatically (Docker required). Dev mode loads m
 ./mvnw verify                                        # everything, API driver
 ./mvnw verify -pl acceptance-tests -Ddriver=ui       # acceptance tests through the browser
 ```
+
+The acceptance tests start the app's container image with Testcontainers, so build it first (`./mvnw verify` or `./mvnw package -pl app`) before running `-pl acceptance-tests` alone.
 
 ## Deployment
 
