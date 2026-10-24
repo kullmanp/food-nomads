@@ -1,0 +1,1 @@
+-- Baseline: the schema starts empty. Later migrations add the tables.
