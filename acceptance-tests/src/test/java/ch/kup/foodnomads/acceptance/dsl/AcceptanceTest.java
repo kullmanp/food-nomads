@@ -17,6 +17,7 @@ public abstract class AcceptanceTest {
 
     @BeforeEach
     void setUpDsl() {
+        Founder.ensureJoined();
         driver = ProtocolDriver.selected();
         system = new SystemDsl(driver.system());
         members = new MembersDsl(driver.members());

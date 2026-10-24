@@ -12,4 +12,25 @@ public interface Messages {
 
     @Message
     String home_placeholder();
+
+    @Message
+    String home_logged_in_as();
+
+    @Message
+    String join_title();
+
+    @Message
+    String join_intro();
+
+    @Message
+    String join_display_name();
+
+    @Message
+    String join_submit();
+
+    @Message
+    String join_failed();
+
+    @Message
+    String join_rejected();
 }

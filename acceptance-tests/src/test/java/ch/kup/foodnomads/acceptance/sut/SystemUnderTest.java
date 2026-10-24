@@ -2,6 +2,8 @@ package ch.kup.foodnomads.acceptance.sut;
 
 import java.net.URI;
 import java.time.Duration;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.wait.strategy.Wait;
@@ -16,6 +18,7 @@ public final class SystemUnderTest {
 
     private static final String POSTGRES_IMAGE = "postgres:18-alpine";
     private static final int APP_PORT = 8080;
+    private static final Pattern BOOTSTRAP_INVITE = Pattern.compile("Bootstrap Invite: (\\S+)");
 
     private final GenericContainer<?> app;
 
@@ -31,10 +34,16 @@ public final class SystemUnderTest {
         return URI.create("http://" + app.getHost() + ":" + app.getMappedPort(APP_PORT) + "/");
     }
 
-    /** The join URL of the Bootstrap Invite, as the app logged it at startup. */
+    /**
+     * The join URL of the Bootstrap Invite, as the app logged it at startup, pointed at the
+     * app's mapped port.
+     */
     public URI bootstrapInviteUrl() {
-        throw new UnsupportedOperationException(
-                "Not implemented yet: the app logs the Bootstrap Invite join URL at startup");
+        Matcher matcher = BOOTSTRAP_INVITE.matcher(app.getLogs());
+        if (!matcher.find()) {
+            throw new IllegalStateException("The app did not log a Bootstrap Invite");
+        }
+        return baseUrl().resolve(URI.create(matcher.group(1)).getRawPath().substring(1));
     }
 
     private static final class Holder {

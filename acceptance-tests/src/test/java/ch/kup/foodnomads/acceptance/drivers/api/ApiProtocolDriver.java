@@ -4,30 +4,28 @@ import ch.kup.foodnomads.acceptance.drivers.MemberDriver;
 import ch.kup.foodnomads.acceptance.drivers.ProtocolDriver;
 import ch.kup.foodnomads.acceptance.drivers.SystemDriver;
 import java.net.URI;
-import java.net.http.HttpClient;
 
 /** Talks to the system through the JSON API under {@code /api}. */
 public class ApiProtocolDriver implements ProtocolDriver {
 
-    private final HttpClient http = HttpClient.newHttpClient();
-    private final URI baseUrl;
+    private final ApiClient api;
 
     public ApiProtocolDriver(URI baseUrl) {
-        this.baseUrl = baseUrl;
+        this.api = new ApiClient(baseUrl);
     }
 
     @Override
     public SystemDriver system() {
-        return new ApiSystemDriver(http, baseUrl);
+        return new ApiSystemDriver(api);
     }
 
     @Override
     public MemberDriver members() {
-        return new ApiMemberDriver();
+        return new ApiMemberDriver(api);
     }
 
     @Override
     public void close() {
-        http.close();
+        api.close();
     }
 }

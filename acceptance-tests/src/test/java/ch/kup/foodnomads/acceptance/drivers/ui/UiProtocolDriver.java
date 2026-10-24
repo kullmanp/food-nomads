@@ -18,11 +18,13 @@ public class UiProtocolDriver implements ProtocolDriver {
     private final BrowserContext context;
     private final Page page;
     private final URI baseUrl;
+    private final VirtualAuthenticator authenticator;
 
     public UiProtocolDriver(URI baseUrl) {
         this.baseUrl = baseUrl;
         this.context = SharedBrowser.INSTANCE.newContext(phone());
         this.page = context.newPage();
+        this.authenticator = new VirtualAuthenticator(context.newCDPSession(page));
     }
 
     @Override
@@ -32,7 +34,7 @@ public class UiProtocolDriver implements ProtocolDriver {
 
     @Override
     public MemberDriver members() {
-        return new UiMemberDriver();
+        return new UiMemberDriver(page, baseUrl, authenticator);
     }
 
     @Override
