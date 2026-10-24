@@ -3,6 +3,7 @@ package ch.kup.foodnomads.acceptance.drivers.ui;
 import ch.kup.foodnomads.acceptance.drivers.MemberDriver;
 import ch.kup.foodnomads.acceptance.drivers.ProtocolDriver;
 import ch.kup.foodnomads.acceptance.drivers.SystemDriver;
+import ch.kup.foodnomads.acceptance.drivers.VenueDriver;
 import com.microsoft.playwright.Browser;
 import com.microsoft.playwright.BrowserContext;
 import com.microsoft.playwright.Page;
@@ -35,6 +36,11 @@ public class UiProtocolDriver implements ProtocolDriver {
     @Override
     public MemberDriver members() {
         return new UiMemberDriver(page, baseUrl, authenticator);
+    }
+
+    @Override
+    public VenueDriver venues() {
+        return new UiVenueDriver(page, baseUrl);
     }
 
     @Override

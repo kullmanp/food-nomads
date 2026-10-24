@@ -4,6 +4,7 @@ import ch.kup.foodnomads.acceptance.drivers.Passkey;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.microsoft.playwright.CDPSession;
+import java.util.Arrays;
 import java.util.Base64;
 
 /**
@@ -34,13 +35,51 @@ final class VirtualAuthenticator {
 
     /** The one passkey on this authenticator. */
     Passkey onlyPasskey() {
-        JsonObject params = new JsonObject();
-        params.addProperty("authenticatorId", authenticatorId);
-        JsonArray credentials = cdp.send("WebAuthn.getCredentials", params).getAsJsonArray("credentials");
+        JsonArray credentials = credentials();
         if (credentials.size() != 1) {
             throw new IllegalStateException("Expected one passkey on the authenticator, found " + credentials.size());
         }
-        JsonObject credential = credentials.get(0).getAsJsonObject();
+        return toPasskey(credentials.get(0).getAsJsonObject());
+    }
+
+    /** The passkey with this credential id, as it is now on this authenticator, sign count included. */
+    Passkey passkey(byte[] credentialId) {
+        for (var credential : credentials()) {
+            if (Arrays.equals(credentialId, decode(credential.getAsJsonObject().get("credentialId").getAsString()))) {
+                return toPasskey(credential.getAsJsonObject());
+            }
+        }
+        throw new IllegalStateException("The passkey isn't on the authenticator");
+    }
+
+    /** Puts this passkey on the authenticator as a discoverable credential, unless it is there already. */
+    void holdPasskey(Passkey passkey) {
+        for (var credential : credentials()) {
+            if (Arrays.equals(passkey.credentialId(),
+                    decode(credential.getAsJsonObject().get("credentialId").getAsString()))) {
+                return;
+            }
+        }
+        JsonObject credential = new JsonObject();
+        credential.addProperty("credentialId", encode(passkey.credentialId()));
+        credential.addProperty("isResidentCredential", true);
+        credential.addProperty("rpId", passkey.rpId());
+        credential.addProperty("privateKey", encode(passkey.privateKey()));
+        credential.addProperty("userHandle", encode(passkey.userHandle()));
+        credential.addProperty("signCount", passkey.signCount());
+        JsonObject params = new JsonObject();
+        params.addProperty("authenticatorId", authenticatorId);
+        params.add("credential", credential);
+        cdp.send("WebAuthn.addCredential", params);
+    }
+
+    private JsonArray credentials() {
+        JsonObject params = new JsonObject();
+        params.addProperty("authenticatorId", authenticatorId);
+        return cdp.send("WebAuthn.getCredentials", params).getAsJsonArray("credentials");
+    }
+
+    private static Passkey toPasskey(JsonObject credential) {
         return new Passkey(
                 decode(credential.get("credentialId").getAsString()),
                 decode(credential.get("privateKey").getAsString()),
@@ -52,5 +91,9 @@ final class VirtualAuthenticator {
     // CDP encodes binary fields as standard base64.
     private static byte[] decode(String base64) {
         return Base64.getDecoder().decode(base64);
+    }
+
+    private static String encode(byte[] bytes) {
+        return Base64.getEncoder().encodeToString(bytes);
     }
 }

@@ -43,6 +43,29 @@ class ApiMemberDriver implements MemberDriver {
     }
 
     @Override
+    public void logIn(String displayName) {
+        HttpResponse<String> options = api.get("api/login/options");
+        assertEquals(200, options.statusCode(), "GET /api/login/options: " + options.body());
+
+        var credential = SoftwareAuthenticator.logIn(ApiClient.readJson(options), Passkeys.of(displayName), api.origin());
+        HttpResponse<String> loggedIn = api.post("api/login", credential);
+        assertEquals(200, loggedIn.statusCode(), "POST /api/login: " + loggedIn.body());
+    }
+
+    @Override
+    public void logOut() {
+        HttpResponse<String> response = api.post("api/logout", ApiClient.newObject());
+        assertEquals(204, response.statusCode(), "POST /api/logout: " + response.body());
+    }
+
+    @Override
+    public void assertLoggedOut() {
+        HttpResponse<String> response = api.get("api/me");
+
+        assertEquals(401, response.statusCode(), "GET /api/me: " + response.body());
+    }
+
+    @Override
     public void assertBootstrapInviteRejected(URI joinUrl) {
         String joinPath = joinApiPath(joinUrl);
 

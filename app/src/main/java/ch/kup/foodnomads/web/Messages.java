@@ -17,6 +17,33 @@ public interface Messages {
     String home_logged_in_as();
 
     @Message
+    String home_log_in();
+
+    @Message
+    String home_log_out();
+
+    @Message
+    String home_venues();
+
+    @Message
+    String login_title();
+
+    @Message
+    String login_intro();
+
+    @Message
+    String login_submit();
+
+    @Message
+    String login_failed();
+
+    @Message
+    String venues_title();
+
+    @Message
+    String venues_empty();
+
+    @Message
     String join_title();
 
     @Message

@@ -49,13 +49,21 @@ public class Membership {
         return member;
     }
 
-    @Transactional
     public Optional<Member> current(SecurityIdentity identity) {
         if (identity.isAnonymous()) {
             return Optional.empty();
         }
+        return find(identity.getPrincipal().getName());
+    }
+
+    /** The Member with this id, which is also their WebAuthn username and principal name. */
+    @Transactional
+    public Optional<Member> find(String memberId) {
+        if (memberId == null) {
+            return Optional.empty();
+        }
         try {
-            return Member.findByIdOptional(UUID.fromString(identity.getPrincipal().getName()));
+            return Member.findByIdOptional(UUID.fromString(memberId));
         } catch (IllegalArgumentException e) {
             return Optional.empty();
         }

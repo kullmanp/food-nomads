@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{msg:login_title}</title>
+    <script src="/q/webauthn/webauthn.js"></script>
+</head>
+<body>
+<main id="login">
+    <h1>{msg:login_title}</h1>
+    <p>{msg:login_intro}</p>
+    <button id="log-in-button" type="button">{msg:login_submit}</button>
+    <p id="login-error" role="alert" hidden>{msg:login_failed}</p>
+</main>
+<script>
+    document.getElementById("log-in-button").addEventListener("click", async () => {
+        document.getElementById("login-error").hidden = true;
+        const webAuthn = new WebAuthn({ loginOptionsChallengePath: "/api/login/options" });
+        try {
+            const credential = await webAuthn.loginClientSteps();
+            const response = await fetch("/api/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json", "Accept": "application/json" },
+                body: JSON.stringify(credential)
+            });
+            if (!response.ok) {
+                throw new Error("Login failed with " + response.status);
+            }
+            window.location.href = "/";
+        } catch (error) {
+            console.error(error);
+            document.getElementById("login-error").hidden = false;
+        }
+    });
+</script>
+</body>
+</html>
