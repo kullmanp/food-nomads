@@ -1,6 +1,9 @@
 package ch.kup.foodnomads.acceptance.drivers.api;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import ch.kup.foodnomads.acceptance.drivers.VenueDriver;
+import java.net.http.HttpResponse;
 
 class ApiVenueDriver implements VenueDriver {
 
@@ -12,7 +15,8 @@ class ApiVenueDriver implements VenueDriver {
 
     @Override
     public void assertNotAccessibleWithoutLogin() {
-        throw new UnsupportedOperationException(
-                "Not implemented yet: GET /api/venues answers 401 without a logged-in Member");
+        HttpResponse<String> response = api.get("api/venues");
+
+        assertEquals(401, response.statusCode(), "GET /api/venues: " + response.body());
     }
 }

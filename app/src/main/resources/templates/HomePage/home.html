@@ -10,6 +10,12 @@
     <h1>{msg:app_name}</h1>
     {#if currentMember}
     <p>{msg:home_logged_in_as}: <span id="current-member">{currentMember}</span></p>
+    <nav><a id="venues-link" href="/venues">{msg:home_venues}</a></nav>
+    <form id="log-out-form" method="post" action="/logout">
+        <button id="log-out-button" type="submit">{msg:home_log_out}</button>
+    </form>
+    {#else}
+    <p><a id="log-in-link" href="/login">{msg:home_log_in}</a></p>
     {/if}
     <p>{msg:home_placeholder}</p>
 </main>

@@ -44,20 +44,25 @@ class ApiMemberDriver implements MemberDriver {
 
     @Override
     public void logIn(String displayName) {
-        throw new UnsupportedOperationException(
-                "Not implemented yet: log in through the WebAuthn login ceremony with the Member's imported passkey");
+        HttpResponse<String> options = api.get("api/login/options");
+        assertEquals(200, options.statusCode(), "GET /api/login/options: " + options.body());
+
+        var credential = SoftwareAuthenticator.logIn(ApiClient.readJson(options), Passkeys.of(displayName), api.origin());
+        HttpResponse<String> loggedIn = api.post("api/login", credential);
+        assertEquals(200, loggedIn.statusCode(), "POST /api/login: " + loggedIn.body());
     }
 
     @Override
     public void logOut() {
-        throw new UnsupportedOperationException(
-                "Not implemented yet: log out through /api");
+        HttpResponse<String> response = api.post("api/logout", ApiClient.newObject());
+        assertEquals(204, response.statusCode(), "POST /api/logout: " + response.body());
     }
 
     @Override
     public void assertLoggedOut() {
-        throw new UnsupportedOperationException(
-                "Not implemented yet: GET /api/me answers 401 once logged out");
+        HttpResponse<String> response = api.get("api/me");
+
+        assertEquals(401, response.statusCode(), "GET /api/me: " + response.body());
     }
 
     @Override

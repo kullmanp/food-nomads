@@ -3,6 +3,7 @@ package ch.kup.foodnomads.acceptance.drivers.ui;
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
 
 import ch.kup.foodnomads.acceptance.drivers.MemberDriver;
+import ch.kup.foodnomads.acceptance.drivers.Passkey;
 import ch.kup.foodnomads.acceptance.drivers.Passkeys;
 import com.microsoft.playwright.Page;
 import java.net.URI;
@@ -38,20 +39,31 @@ class UiMemberDriver implements MemberDriver {
 
     @Override
     public void logIn(String displayName) {
-        throw new UnsupportedOperationException(
-                "Not implemented yet: log in on the login page with the Member's passkey imported into the virtual authenticator");
+        Passkey passkey = Passkeys.of(displayName);
+        authenticator.holdPasskey(passkey);
+
+        page.navigate(baseUrl.resolve("login").toString());
+        page.locator("#log-in-button").click();
+
+        assertThat(page.locator("#current-member")).hasText(displayName);
+        // The authenticator counted this login, and the app expects the count to keep rising.
+        Passkeys.store(displayName, authenticator.passkey(passkey.credentialId()));
     }
 
     @Override
     public void logOut() {
-        throw new UnsupportedOperationException(
-                "Not implemented yet: log out from the page");
+        page.navigate(baseUrl.toString());
+        page.locator("#log-out-button").click();
+
+        assertThat(page.locator("#log-in-link")).isVisible();
     }
 
     @Override
     public void assertLoggedOut() {
-        throw new UnsupportedOperationException(
-                "Not implemented yet: the page shows no logged-in Member once logged out");
+        page.navigate(baseUrl.toString());
+
+        assertThat(page.locator("#log-in-link")).isVisible();
+        assertThat(page.locator("#current-member")).not().isAttached();
     }
 
     @Override

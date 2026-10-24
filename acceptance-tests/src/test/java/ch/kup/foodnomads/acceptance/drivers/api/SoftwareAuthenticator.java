@@ -13,17 +13,21 @@ import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
+import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.MessageDigest;
+import java.security.PrivateKey;
 import java.security.SecureRandom;
+import java.security.Signature;
 import java.security.interfaces.ECPublicKey;
 import java.security.spec.ECGenParameterSpec;
+import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.Base64;
 
 /**
  * A minimal WebAuthn authenticator in Java: ES256 keys, "none" attestation, user present and
- * verified. Enough for the API driver to run the real ceremony against the app.
+ * verified. Enough for the API driver to run the real ceremonies against the app.
  */
 final class SoftwareAuthenticator {
 
@@ -68,6 +72,51 @@ final class SoftwareAuthenticator {
 
         Passkey passkey = new Passkey(credentialId, keyPair.getPrivate().getEncoded(), rpId, userHandle, 0);
         return new Registration(credential, passkey);
+    }
+
+    /**
+     * Answers {@code navigator.credentials.get()} for the given request options with this
+     * passkey. The sign count stays 0, like authenticators that don't count.
+     *
+     * @param options the {@code PublicKeyCredentialRequestOptions} JSON from the app
+     * @param origin  the origin the "browser" is on, e.g. {@code http://localhost:8080}
+     */
+    static ObjectNode logIn(JsonNode options, Passkey passkey, String origin) {
+        byte[] clientDataJson = clientData("webauthn.get", options.path("challenge").asText(), origin);
+        byte[] authenticatorData = ByteBuffer.allocate(32 + 1 + 4)
+                .put(sha256(options.path("rpId").asText().getBytes(StandardCharsets.UTF_8)))
+                .put((byte) (FLAG_USER_PRESENT | FLAG_USER_VERIFIED))
+                .putInt(0)
+                .array();
+        byte[] signature = sign(passkey.privateKey(), concat(authenticatorData, sha256(clientDataJson)));
+
+        ObjectNode credential = JSON.createObjectNode();
+        credential.put("id", encode(passkey.credentialId()));
+        credential.put("rawId", encode(passkey.credentialId()));
+        credential.put("type", "public-key");
+        ObjectNode response = credential.putObject("response");
+        response.put("clientDataJSON", encode(clientDataJson));
+        response.put("authenticatorData", encode(authenticatorData));
+        response.put("signature", encode(signature));
+        response.put("userHandle", encode(passkey.userHandle()));
+        return credential;
+    }
+
+    /** ES256: ECDSA over SHA-256, DER-encoded as WebAuthn expects. */
+    private static byte[] sign(byte[] pkcs8PrivateKey, byte[] data) {
+        try {
+            PrivateKey key = KeyFactory.getInstance("EC").generatePrivate(new PKCS8EncodedKeySpec(pkcs8PrivateKey));
+            Signature signature = Signature.getInstance("SHA256withECDSA");
+            signature.initSign(key);
+            signature.update(data);
+            return signature.sign();
+        } catch (GeneralSecurityException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    private static byte[] concat(byte[] first, byte[] second) {
+        return ByteBuffer.allocate(first.length + second.length).put(first).put(second).array();
     }
 
     private static byte[] clientData(String type, String challenge, String origin) {
