@@ -1,0 +1,10 @@
+# /etc/caddy/Caddyfile on the nomads VM. Caddy gets the certificate by itself.
+nomads.kup.ch {
+	encode zstd gzip
+	header Strict-Transport-Security "max-age=31536000"
+
+	# Health checks and other Quarkus endpoints stay on the VM.
+	respond /q/* 404
+
+	reverse_proxy 127.0.0.1:8080
+}

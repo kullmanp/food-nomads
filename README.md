@@ -44,7 +44,7 @@ The acceptance tests start the app's container image with Testcontainers, so bui
 
 ## Deployment
 
-The app runs as `docker compose` (Caddy + app + PostgreSQL) in a Debian VM on a home Proxmox server, reached at `nomads.kup.ch` through dynamic DNS and a port-forward to Caddy, which handles TLS. GitHub Actions builds the image to GHCR, and a deploy script pulls it. On an empty database, the app logs a one-time bootstrap Invite for the first Member. Configuration comes from environment variables; see `.env.example`.
+The app runs on a Debian VM on a home Proxmox server, reached at `nomads.kup.ch` through dynamic DNS and a port forward to Caddy, which runs on the VM and handles TLS. Behind it, `docker compose` runs the app and PostgreSQL ([deploy/compose.yaml](deploy/compose.yaml)). On `main`, GitHub Actions pushes the image to GHCR, tagged with the commit sha, and `deploy/deploy.sh <sha>` runs that version. Configuration comes from `deploy/.env`; see [deploy/.env.example](deploy/.env.example). On an empty database, the app logs a one-time Bootstrap Invite for the first Member.
 
 ## How this repo is built
 

@@ -1,0 +1,51 @@
+# Production: the app and PostgreSQL on the nomads VM. Caddy runs on the VM itself
+# (not in here) and proxies https://nomads.kup.ch to 127.0.0.1:8080.
+# Settings come from .env next to this file; see .env.example.
+name: food-nomads
+
+services:
+  app:
+    image: ghcr.io/kullmanp/food-nomads:${APP_VERSION:?set APP_VERSION in .env}
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    # Only Caddy on the VM reaches the app, never the network directly.
+    ports:
+      - "127.0.0.1:8080:8080"
+    environment:
+      QUARKUS_DATASOURCE_JDBC_URL: jdbc:postgresql://db:5432/foodnomads
+      QUARKUS_DATASOURCE_USERNAME: foodnomads
+      QUARKUS_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      FOODNOMADS_BASE_URL: ${BASE_URL:?set BASE_URL in .env}
+      # Passkeys are bound to this origin. Without it, the app would derive it from the
+      # proxied request and registration and login would fail.
+      QUARKUS_WEBAUTHN_ORIGINS: ${BASE_URL}
+      # A fixed key keeps Members logged in across restarts and deploys.
+      QUARKUS_HTTP_AUTH_SESSION_ENCRYPTION_KEY: ${SESSION_ENCRYPTION_KEY:?set SESSION_ENCRYPTION_KEY in .env}
+      # Behind Caddy: take scheme, host and client address from its X-Forwarded-* headers.
+      # Every proxy is trusted, which is fine because the port is bound to localhost.
+      QUARKUS_HTTP_PROXY_PROXY_ADDRESS_FORWARDING: "true"
+      QUARKUS_HTTP_PROXY_ALLOW_X_FORWARDED: "true"
+      QUARKUS_HTTP_PROXY_ENABLE_FORWARDED_HOST: "true"
+    # The VM has 2 GB; the JVM sizes its heap from this limit.
+    mem_limit: 768m
+
+  db:
+    image: postgres:18-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: foodnomads
+      POSTGRES_USER: foodnomads
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+    volumes:
+      - db-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "foodnomads", "-d", "foodnomads"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    mem_limit: 384m
+
+volumes:
+  db-data:
