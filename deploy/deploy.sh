@@ -11,8 +11,10 @@ if [ $# -eq 0 ]; then
     exit 0
 fi
 version=$1
+# Overrides .env for every compose call below, including the ones in backup.sh.
+export APP_VERSION=$version
 
-APP_VERSION=$version docker compose pull app
+docker compose pull app
 
 # Flyway migrates the schema at startup, so keep a dump of the state before.
 ./backup.sh

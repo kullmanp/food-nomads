@@ -16,7 +16,6 @@ This app organises and documents those lunches. It runs as a PWA on the phone an
 Domain terms are defined in [GLOSSARY.md](GLOSSARY.md).
 
 ## Tech stack
-
 - Java 25, Quarkus (LTS), Maven
 - Qute + htmx server-rendered UI, plus a JSON API under `/api`
 - PostgreSQL, photos on a mounted volume
