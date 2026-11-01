@@ -3,8 +3,13 @@ nomads.kup.ch {
 	encode zstd gzip
 	header Strict-Transport-Security "max-age=31536000"
 
-	# Health checks and other Quarkus endpoints stay on the VM.
-	respond /q/* 404
+	# Health checks and other Quarkus endpoints stay on the VM. The join and
+	# login pages need the passkey script, so that one file goes through.
+	@internal {
+		path /q/*
+		not path /q/webauthn/webauthn.js
+	}
+	respond @internal 404
 
 	reverse_proxy 127.0.0.1:8080
 }
