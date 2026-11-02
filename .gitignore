@@ -2,3 +2,4 @@ target/
 .vscode/
 deploy/.env
 deploy/backups/
+.idea/
