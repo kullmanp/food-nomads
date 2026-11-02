@@ -17,6 +17,7 @@
         <quarkus.platform.version>3.40.1.1</quarkus.platform.version>
         <quarkus.container-image.image>${app.image}</quarkus.container-image.image>
         <htmx.version>2.0.11</htmx.version>
+        <assertj.version>3.27.7</assertj.version>
     </properties>
 
     <dependencyManagement>
@@ -76,6 +77,19 @@
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-container-image-docker</artifactId>
+        </dependency>
+
+        <!-- Unit tests: plain JUnit, no Quarkus, no database. -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
+            <version>${assertj.version}</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 
