@@ -121,8 +121,8 @@
                 </configuration>
             </plugin>
             <!--
-                Mutation testing for the unit tests:
-                ./mvnw -pl app test-compile org.pitest:pitest-maven:mutationCoverage
+                Mutation testing for the unit tests. Part of ./mvnw verify (skip with -DskipPitest).
+                On its own: ./mvnw -pl app test-compile org.pitest:pitest-maven:mutationCoverage
                 Report: app/target/pit-reports/index.html.
                 api, web and the Panache repositories are adapters covered by the acceptance tests, which
                 PIT can't use (the app runs as a container), so they are excluded.
@@ -138,7 +138,20 @@
                         <version>${pitest-junit5.version}</version>
                     </dependency>
                 </dependencies>
+                <executions>
+                    <!-- Runs right after the unit tests, so ./mvnw verify fails before the image is built. -->
+                    <execution>
+                        <id>mutation-coverage</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>mutationCoverage</goal>
+                        </goals>
+                    </execution>
+                </executions>
                 <configuration>
+                    <!-- Every mutant a unit test reaches must be killed. -->
+                    <testStrengthThreshold>100</testStrengthThreshold>
+                    <threads>4</threads>
                     <targetClasses>
                         <param>ch.kup.foodnomads.*</param>
                     </targetClasses>
