@@ -3,12 +3,15 @@ package ch.kup.foodnomads.members;
 import io.quarkus.runtime.StartupEvent;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
+import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.util.Base64;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.jboss.logging.Logger;
 
@@ -22,19 +25,33 @@ public class BootstrapInvite {
     private static final Logger LOG = Logger.getLogger(BootstrapInvite.class);
 
     private final AtomicReference<String> token = new AtomicReference<>();
+    private final MemberRepository members;
+    private final String baseUrl;
+    private final Supplier<String> newToken;
 
-    @ConfigProperty(name = "foodnomads.base-url")
-    String baseUrl;
+    @Inject
+    public BootstrapInvite(MemberRepository members, @ConfigProperty(name = "foodnomads.base-url") String baseUrl) {
+        this(members, baseUrl, BootstrapInvite::randomToken);
+    }
+
+    BootstrapInvite(MemberRepository members, String baseUrl, Supplier<String> newToken) {
+        this.members = members;
+        this.baseUrl = baseUrl;
+        this.newToken = newToken;
+    }
 
     @Transactional
     void createIfNoMembers(@Observes StartupEvent event) {
-        if (Member.count() > 0) {
+        if (members.count() > 0) {
             return;
         }
-        byte[] bytes = new byte[32];
-        new SecureRandom().nextBytes(bytes);
-        token.set(Base64.getUrlEncoder().withoutPadding().encodeToString(bytes));
-        LOG.infof("Bootstrap Invite: %s/join/%s", baseUrl.replaceAll("/+$", ""), token.get());
+        token.set(newToken.get());
+        LOG.infof("Bootstrap Invite: %s", joinUrl().orElseThrow());
+    }
+
+    /** Where to redeem the Invite, if there is one. */
+    Optional<String> joinUrl() {
+        return Optional.ofNullable(token.get()).map(t -> baseUrl.replaceAll("/+$", "") + "/join/" + t);
     }
 
     public boolean isValid(String candidate) {
@@ -47,6 +64,12 @@ public class BootstrapInvite {
         if (!matches(current, candidate) || !token.compareAndSet(current, null)) {
             throw new InviteRejectedException();
         }
+    }
+
+    static String randomToken() {
+        byte[] bytes = new byte[32];
+        new SecureRandom().nextBytes(bytes);
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
     }
 
     private static boolean matches(String current, String candidate) {

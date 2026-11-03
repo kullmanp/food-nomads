@@ -17,6 +17,9 @@
         <quarkus.platform.version>3.40.1.1</quarkus.platform.version>
         <quarkus.container-image.image>${app.image}</quarkus.container-image.image>
         <htmx.version>2.0.11</htmx.version>
+        <assertj.version>3.27.7</assertj.version>
+        <pitest.version>1.30.1</pitest.version>
+        <pitest-junit5.version>1.2.3</pitest-junit5.version>
     </properties>
 
     <dependencyManagement>
@@ -77,6 +80,19 @@
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-container-image-docker</artifactId>
         </dependency>
+
+        <!-- Unit tests: plain JUnit, no Quarkus, no database. -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
+            <version>${assertj.version}</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -102,6 +118,65 @@
                     <systemPropertyVariables>
                         <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
                     </systemPropertyVariables>
+                </configuration>
+            </plugin>
+            <!--
+                Mutation testing for the unit tests. Part of ./mvnw verify (skip with -DskipPitest).
+                On its own: ./mvnw -pl app test-compile org.pitest:pitest-maven:mutationCoverage
+                Report: app/target/pit-reports/index.html.
+                api, web and the Panache repositories are adapters covered by the acceptance tests, which
+                PIT can't use (the app runs as a container), so they are excluded.
+            -->
+            <plugin>
+                <groupId>org.pitest</groupId>
+                <artifactId>pitest-maven</artifactId>
+                <version>${pitest.version}</version>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.pitest</groupId>
+                        <artifactId>pitest-junit5-plugin</artifactId>
+                        <version>${pitest-junit5.version}</version>
+                    </dependency>
+                </dependencies>
+                <executions>
+                    <!-- Runs right after the unit tests, so ./mvnw verify fails before the image is built. -->
+                    <execution>
+                        <id>mutation-coverage</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>mutationCoverage</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <!-- Every mutant a unit test reaches must be killed. -->
+                    <testStrengthThreshold>100</testStrengthThreshold>
+                    <threads>4</threads>
+                    <targetClasses>
+                        <param>ch.kup.foodnomads.*</param>
+                    </targetClasses>
+                    <targetTests>
+                        <param>ch.kup.foodnomads.*Test</param>
+                    </targetTests>
+                    <excludedClasses>
+                        <param>ch.kup.foodnomads.api.*</param>
+                        <param>ch.kup.foodnomads.web.*</param>
+                        <!-- Persistence adapters, covered by the acceptance tests (ADR-0005). -->
+                        <param>ch.kup.foodnomads.*.Panache*</param>
+                    </excludedClasses>
+                    <excludedTestClasses>
+                        <param>*IT</param>
+                    </excludedTestClasses>
+                    <excludedGroups>
+                        <param>io.quarkus.test.junit.QuarkusTest</param>
+                    </excludedGroups>
+                    <outputFormats>
+                        <param>HTML</param>
+                    </outputFormats>
+                    <timestampedReports>false</timestampedReports>
+                    <jvmArgs>
+                        <value>-Djava.util.logging.manager=org.jboss.logmanager.LogManager</value>
+                    </jvmArgs>
                 </configuration>
             </plugin>
         </plugins>

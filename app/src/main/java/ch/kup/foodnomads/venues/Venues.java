@@ -11,6 +11,12 @@ import java.util.UUID;
 @ApplicationScoped
 public class Venues {
 
+    private final VenueRepository repository;
+
+    public Venues(VenueRepository repository) {
+        this.repository = repository;
+    }
+
     /**
      * Proposes a Venue on behalf of this Member. Fails with {@link IllegalArgumentException} if
      * the name is missing. A blank address counts as none.
@@ -27,15 +33,15 @@ public class Venues {
         venue.id = UUID.randomUUID();
         venue.name = trimmedName;
         venue.address = trimmedAddress.isEmpty() ? null : trimmedAddress;
-        venue.proposedBy = Member.getEntityManager().merge(proposer);
+        venue.proposedBy = proposer;
         venue.proposedAt = Instant.now();
-        venue.persist();
+        repository.add(venue);
         return venue;
     }
 
     /** All Venues, newest first, with their proposing Member loaded. */
     @Transactional
     public List<Venue> candidates() {
-        return Venue.find("from Venue v join fetch v.proposedBy order by v.proposedAt desc, v.id").list();
+        return repository.newestFirst();
     }
 }
