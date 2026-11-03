@@ -7,4 +7,5 @@ The application layer (e.g. `Venues`) holds the business rules, so that is where
 - Repository interfaces stay minimal: one method per query the application layer actually needs. They hold no rules.
 - The Panache implementations aren't unit-tested. The acceptance tests cover them through both drivers.
 - `@Transactional` stays on the application service. Repositories assume a caller's transaction.
-- Services that still talk to Panache directly (e.g. `Membership`) move behind a repository the next time a ticket changes their rules.
+- New application services follow the same pattern. `Venues`, `Membership`, `MemberPasskeys` and `BootstrapInvite` already do.
+- PIT runs in `./mvnw verify` and fails the build if a mutant that a unit test reaches survives. The Panache repositories, `api` and `web` are excluded from mutation.

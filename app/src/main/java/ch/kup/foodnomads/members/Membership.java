@@ -3,7 +3,6 @@ package ch.kup.foodnomads.members;
 import io.quarkus.security.identity.SecurityIdentity;
 import io.quarkus.security.webauthn.WebAuthnCredentialRecord;
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import java.time.Instant;
 import java.util.Optional;
@@ -13,8 +12,15 @@ import java.util.UUID;
 @ApplicationScoped
 public class Membership {
 
-    @Inject
-    BootstrapInvite bootstrapInvite;
+    private final BootstrapInvite bootstrapInvite;
+    private final MemberRepository members;
+    private final PasskeyRepository passkeys;
+
+    public Membership(BootstrapInvite bootstrapInvite, MemberRepository members, PasskeyRepository passkeys) {
+        this.bootstrapInvite = bootstrapInvite;
+        this.members = members;
+        this.passkeys = passkeys;
+    }
 
     public boolean isInviteValid(String token) {
         return bootstrapInvite.isValid(token);
@@ -44,8 +50,8 @@ public class Membership {
         member.id = UUID.randomUUID();
         member.displayName = name;
         member.joinedAt = Instant.now();
-        member.persist();
-        Passkey.of(member, passkey).persist();
+        members.add(member);
+        passkeys.add(Passkey.of(member, passkey));
         return member;
     }
 
@@ -63,7 +69,7 @@ public class Membership {
             return Optional.empty();
         }
         try {
-            return Member.findByIdOptional(UUID.fromString(memberId));
+            return members.find(UUID.fromString(memberId));
         } catch (IllegalArgumentException e) {
             return Optional.empty();
         }
