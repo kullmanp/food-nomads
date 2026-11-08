@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
 
 env:
-  MAVEN_ARGS: -B --no-transfer-progress
+  MAVEN_ARGS: -B --no-transfer-progress -Dspotless.goal=check
 
 jobs:
   build:
