@@ -27,9 +27,8 @@ public class MemberPasskeys implements WebAuthnUserProvider {
         if (id == null) {
             return Uni.createFrom().item(List.of());
         }
-        List<WebAuthnCredentialRecord> records = passkeys.ofMember(id).stream()
-                .map(Passkey::toRecord)
-                .toList();
+        List<WebAuthnCredentialRecord> records =
+                passkeys.ofMember(id).stream().map(Passkey::toRecord).toList();
         return Uni.createFrom().item(records);
     }
 

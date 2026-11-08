@@ -33,13 +33,18 @@ public class VenuesPage {
 
     /** The group lunches in Basel, so that's the time zone dates are shown in. */
     private static final ZoneId ZONE = ZoneId.of("Europe/Zurich");
+
     private static final DateTimeFormatter DATE = DateTimeFormatter.ofPattern("d MMM yyyy", Locale.ENGLISH);
 
     public record Candidate(String name, String address, String proposedBy, String proposedAt, String proposedOn) {
         static Candidate of(Venue venue) {
             var proposedAt = venue.proposedAt.atZone(ZONE);
-            return new Candidate(venue.name, venue.address, venue.proposedBy.displayName,
-                    proposedAt.toOffsetDateTime().toString(), DATE.format(proposedAt));
+            return new Candidate(
+                    venue.name,
+                    venue.address,
+                    venue.proposedBy.displayName,
+                    proposedAt.toOffsetDateTime().toString(),
+                    DATE.format(proposedAt));
         }
     }
 
@@ -69,7 +74,9 @@ public class VenuesPage {
 
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    public Response propose(@FormParam("name") String name, @FormParam("address") String address,
+    public Response propose(
+            @FormParam("name") String name,
+            @FormParam("address") String address,
             @HeaderParam("HX-Request") String htmx) {
         var proposer = membership.current(identity).orElseThrow(() -> new NotAuthorizedException("Member"));
         try {

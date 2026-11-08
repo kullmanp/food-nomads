@@ -23,6 +23,8 @@ class InMemoryPasskeyRepository implements PasskeyRepository {
 
     @Override
     public List<Passkey> ofMember(UUID memberId) {
-        return passkeys.values().stream().filter(p -> p.member.id.equals(memberId)).toList();
+        return passkeys.values().stream()
+                .filter(p -> p.member.id.equals(memberId))
+                .toList();
     }
 }

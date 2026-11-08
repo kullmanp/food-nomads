@@ -5,7 +5,6 @@ import ch.kup.foodnomads.acceptance.drivers.ProtocolDriver;
 import ch.kup.foodnomads.acceptance.drivers.SystemDriver;
 import ch.kup.foodnomads.acceptance.drivers.VenueDriver;
 import com.microsoft.playwright.*;
-
 import java.net.URI;
 
 /**
@@ -59,9 +58,11 @@ public class UiProtocolDriver implements ProtocolDriver {
 
         private static Browser launch() {
             Playwright playwright = Playwright.create();
-            Browser browser = playwright.chromium().launch(new BrowserType.LaunchOptions()
-                    .setHeadless(!Boolean.getBoolean("headed"))
-                    .setSlowMo(Boolean.getBoolean("headed") ? 1500 : 0));
+            Browser browser = playwright
+                    .chromium()
+                    .launch(new BrowserType.LaunchOptions()
+                            .setHeadless(!Boolean.getBoolean("headed"))
+                            .setSlowMo(Boolean.getBoolean("headed") ? 1500 : 0));
             Runtime.getRuntime().addShutdownHook(new Thread(playwright::close));
             return browser;
         }

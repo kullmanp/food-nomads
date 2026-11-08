@@ -11,8 +11,7 @@ public final class Passkeys {
 
     private static final Map<String, Passkey> BY_MEMBER = new ConcurrentHashMap<>();
 
-    private Passkeys() {
-    }
+    private Passkeys() {}
 
     public static void store(String member, Passkey passkey) {
         BY_MEMBER.put(member, passkey);

@@ -11,8 +11,7 @@ import java.util.stream.Collectors;
  */
 public final class Params {
 
-    public record Param(String name, boolean required, String defaultValue) {
-    }
+    public record Param(String name, boolean required, String defaultValue) {}
 
     private final Map<String, String> values;
 
@@ -29,8 +28,7 @@ public final class Params {
     }
 
     public static Params parse(String[] args, Param... declared) {
-        Map<String, Param> declaredByName = Arrays.stream(declared)
-                .collect(Collectors.toMap(Param::name, p -> p));
+        Map<String, Param> declaredByName = Arrays.stream(declared).collect(Collectors.toMap(Param::name, p -> p));
 
         Map<String, String> given = new HashMap<>();
         for (String arg : args) {

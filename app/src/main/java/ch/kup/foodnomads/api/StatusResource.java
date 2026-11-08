@@ -8,8 +8,7 @@ import jakarta.ws.rs.core.MediaType;
 @Path("/api/status")
 public class StatusResource {
 
-    public record Status(String status) {
-    }
+    public record Status(String status) {}
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)

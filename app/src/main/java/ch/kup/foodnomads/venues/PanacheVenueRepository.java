@@ -16,6 +16,7 @@ class PanacheVenueRepository implements VenueRepository {
 
     @Override
     public List<Venue> newestFirst() {
-        return Venue.find("from Venue v join fetch v.proposedBy order by v.proposedAt desc, v.id").list();
+        return Venue.find("from Venue v join fetch v.proposedBy order by v.proposedAt desc, v.id")
+                .list();
     }
 }

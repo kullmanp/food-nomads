@@ -73,7 +73,8 @@ public class BootstrapInvite {
     }
 
     private static boolean matches(String current, String candidate) {
-        return current != null && candidate != null
+        return current != null
+                && candidate != null
                 && MessageDigest.isEqual(
                         current.getBytes(StandardCharsets.UTF_8), candidate.getBytes(StandardCharsets.UTF_8));
     }

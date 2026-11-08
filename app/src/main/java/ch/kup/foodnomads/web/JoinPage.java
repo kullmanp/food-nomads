@@ -29,7 +29,9 @@ public class JoinPage {
     @Produces(MediaType.TEXT_HTML)
     public Response get(@PathParam("token") String token) {
         if (!membership.isInviteValid(token)) {
-            return Response.status(Response.Status.FORBIDDEN).entity(Templates.rejected()).build();
+            return Response.status(Response.Status.FORBIDDEN)
+                    .entity(Templates.rejected())
+                    .build();
         }
         return Response.ok(Templates.join(token)).build();
     }

@@ -8,5 +8,4 @@ package ch.kup.foodnomads.acceptance.drivers;
  * @param privateKey   EC P-256 private key, PKCS#8
  * @param userHandle   the user handle the relying party assigned at registration
  */
-public record Passkey(byte[] credentialId, byte[] privateKey, String rpId, byte[] userHandle, long signCount) {
-}
+public record Passkey(byte[] credentialId, byte[] privateKey, String rpId, byte[] userHandle, long signCount) {}

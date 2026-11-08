@@ -59,21 +59,18 @@ public final class SystemUnderTest {
 
         Network network = Network.newNetwork();
 
-        PostgreSQLContainer postgres = new PostgreSQLContainer(POSTGRES_IMAGE)
-                .withNetwork(network)
-                .withNetworkAliases("postgres");
+        PostgreSQLContainer postgres =
+                new PostgreSQLContainer(POSTGRES_IMAGE).withNetwork(network).withNetworkAliases("postgres");
         postgres.start();
 
         GenericContainer<?> app = new GenericContainer<>(DockerImageName.parse(appImage))
                 .withNetwork(network)
-                .withEnv("QUARKUS_DATASOURCE_JDBC_URL",
-                        "jdbc:postgresql://postgres:5432/" + postgres.getDatabaseName())
+                .withEnv("QUARKUS_DATASOURCE_JDBC_URL", "jdbc:postgresql://postgres:5432/" + postgres.getDatabaseName())
                 .withEnv("QUARKUS_DATASOURCE_USERNAME", postgres.getUsername())
                 .withEnv("QUARKUS_DATASOURCE_PASSWORD", postgres.getPassword())
                 .withExposedPorts(APP_PORT)
-                .waitingFor(Wait.forHttp("/q/health/ready")
-                        .forStatusCode(200)
-                        .withStartupTimeout(Duration.ofMinutes(2)));
+                .waitingFor(
+                        Wait.forHttp("/q/health/ready").forStatusCode(200).withStartupTimeout(Duration.ofMinutes(2)));
         app.start();
 
         return new SystemUnderTest(app);

@@ -2,9 +2,9 @@ package ch.kup.foodnomads.members;
 
 import io.quarkus.security.webauthn.WebAuthnCredentialRecord;
 import io.quarkus.security.webauthn.WebAuthnCredentialRecord.RequiredPersistedData;
+import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.security.KeyPairGenerator;
-import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Base64;
 import java.util.UUID;
@@ -33,8 +33,8 @@ final class TestData {
 
     /** A registration as WebAuthn hands it over; its username is whatever the browser sent. */
     static WebAuthnCredentialRecord registration(String credentialId) {
-        return WebAuthnCredentialRecord.fromRequiredPersistedData(new RequiredPersistedData(
-                "ignored-username", credentialId, UUID.randomUUID(), PUBLIC_KEY, ES256, 5L));
+        return WebAuthnCredentialRecord.fromRequiredPersistedData(
+                new RequiredPersistedData("ignored-username", credentialId, UUID.randomUUID(), PUBLIC_KEY, ES256, 5L));
     }
 
     static Passkey passkey(Member member, String credentialId) {

@@ -38,7 +38,9 @@ class ApiMemberDriver implements MemberDriver {
         HttpResponse<String> response = api.get("api/me");
 
         assertEquals(200, response.statusCode(), "GET /api/me");
-        assertEquals(displayName, ApiClient.readJson(response).path("displayName").asText(),
+        assertEquals(
+                displayName,
+                ApiClient.readJson(response).path("displayName").asText(),
                 "displayName in " + response.body());
     }
 
@@ -47,7 +49,8 @@ class ApiMemberDriver implements MemberDriver {
         HttpResponse<String> options = api.get("api/login/options");
         assertEquals(200, options.statusCode(), "GET /api/login/options: " + options.body());
 
-        var credential = SoftwareAuthenticator.logIn(ApiClient.readJson(options), Passkeys.of(displayName), api.origin());
+        var credential =
+                SoftwareAuthenticator.logIn(ApiClient.readJson(options), Passkeys.of(displayName), api.origin());
         HttpResponse<String> loggedIn = api.post("api/login", credential);
         assertEquals(200, loggedIn.statusCode(), "POST /api/login: " + loggedIn.body());
     }
@@ -74,8 +77,8 @@ class ApiMemberDriver implements MemberDriver {
 
         // Skipping the Invite's options step must not help: take a challenge from Quarkus's
         // own endpoint and present a valid passkey for it.
-        HttpResponse<String> challenge = api.get(
-                "q/webauthn/register-options-challenge?username=Intruder&displayName=Intruder");
+        HttpResponse<String> challenge =
+                api.get("q/webauthn/register-options-challenge?username=Intruder&displayName=Intruder");
         assertEquals(200, challenge.statusCode(), "GET /q/webauthn/register-options-challenge");
         var registration = SoftwareAuthenticator.register(ApiClient.readJson(challenge), api.origin());
 

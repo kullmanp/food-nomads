@@ -48,7 +48,10 @@ public class LoginResource {
 
         WebAuthnCredentialRecord passkey;
         try {
-            passkey = webAuthnSecurity.login(new JsonObject(credential), ctx).await().indefinitely();
+            passkey = webAuthnSecurity
+                    .login(new JsonObject(credential), ctx)
+                    .await()
+                    .indefinitely();
         } catch (RuntimeException e) {
             return passkeyRejected();
         }
@@ -62,6 +65,8 @@ public class LoginResource {
     }
 
     private static Response passkeyRejected() {
-        return Response.status(Response.Status.UNAUTHORIZED).entity(Map.of("error", "passkey-rejected")).build();
+        return Response.status(Response.Status.UNAUTHORIZED)
+                .entity(Map.of("error", "passkey-rejected"))
+                .build();
     }
 }

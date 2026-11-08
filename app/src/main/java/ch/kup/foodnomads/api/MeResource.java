@@ -29,7 +29,8 @@ public class MeResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public Response me() {
-        return membership.current(identity)
+        return membership
+                .current(identity)
                 .map(member -> Response.ok(Me.of(member)).build())
                 .orElseGet(() -> Response.status(Response.Status.UNAUTHORIZED).build());
     }

@@ -28,8 +28,7 @@ import java.util.Map;
 @Produces(MediaType.APPLICATION_JSON)
 public class JoinResource {
 
-    public record JoinRequest(String displayName, Map<String, Object> credential) {
-    }
+    public record JoinRequest(String displayName, Map<String, Object> credential) {}
 
     @Inject
     Membership membership;
@@ -39,8 +38,8 @@ public class JoinResource {
 
     @GET
     @Path("options")
-    public Response options(@PathParam("token") String token, @QueryParam("displayName") String displayName,
-            RoutingContext ctx) {
+    public Response options(
+            @PathParam("token") String token, @QueryParam("displayName") String displayName, RoutingContext ctx) {
         try {
             membership.checkInvite(token);
         } catch (InviteRejectedException e) {
@@ -49,7 +48,8 @@ public class JoinResource {
         String name = displayName == null || displayName.isBlank() ? "Member" : displayName.strip();
         // The authenticator shows the WebAuthn username, so we pass the display name. The
         // username stored with the passkey is the Member id, set when the Member is created.
-        var options = webAuthnSecurity.getRegisterChallenge(name, name, ctx).await().indefinitely();
+        var options =
+                webAuthnSecurity.getRegisterChallenge(name, name, ctx).await().indefinitely();
         return Response.ok(webAuthnSecurity.toJsonString(options)).build();
     }
 
@@ -67,11 +67,14 @@ public class JoinResource {
 
         WebAuthnCredentialRecord passkey;
         try {
-            passkey = webAuthnSecurity.register("pending", new JsonObject(request.credential()), ctx)
-                    .await().indefinitely();
+            passkey = webAuthnSecurity
+                    .register("pending", new JsonObject(request.credential()), ctx)
+                    .await()
+                    .indefinitely();
         } catch (RuntimeException e) {
             return Response.status(Response.Status.BAD_REQUEST)
-                    .entity(Map.of("error", "passkey-rejected")).build();
+                    .entity(Map.of("error", "passkey-rejected"))
+                    .build();
         }
 
         Member member;
@@ -81,13 +84,18 @@ public class JoinResource {
             return inviteRejected();
         } catch (IllegalArgumentException e) {
             return Response.status(Response.Status.BAD_REQUEST)
-                    .entity(Map.of("error", "display-name-required")).build();
+                    .entity(Map.of("error", "display-name-required"))
+                    .build();
         }
         webAuthnSecurity.rememberUser(member.id.toString(), ctx);
-        return Response.status(Response.Status.CREATED).entity(MeResource.Me.of(member)).build();
+        return Response.status(Response.Status.CREATED)
+                .entity(MeResource.Me.of(member))
+                .build();
     }
 
     private static Response inviteRejected() {
-        return Response.status(Response.Status.FORBIDDEN).entity(Map.of("error", "invite-rejected")).build();
+        return Response.status(Response.Status.FORBIDDEN)
+                .entity(Map.of("error", "invite-rejected"))
+                .build();
     }
 }

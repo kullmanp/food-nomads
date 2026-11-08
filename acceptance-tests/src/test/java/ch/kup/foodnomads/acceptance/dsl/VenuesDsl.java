@@ -20,22 +20,23 @@ public class VenuesDsl {
      * proposal is refused.
      */
     public void propose(String... args) {
-        Params params = Params.parse(args,
-                Params.required("name"), Params.optional("address", ""), Params.optional("expect", "success"));
+        Params params = Params.parse(
+                args, Params.required("name"), Params.optional("address", ""), Params.optional("expect", "success"));
         String name = aliases.realName(params.value("name"));
         String address = params.value("address");
         switch (params.value("expect")) {
             case "success" -> driver.propose(name, address);
             case "rejected" -> driver.assertProposalRejected(name, address);
-            default -> throw new IllegalArgumentException(
-                    "Unknown expect '" + params.value("expect") + "', expected success or rejected");
+            default ->
+                throw new IllegalArgumentException(
+                        "Unknown expect '" + params.value("expect") + "', expected success or rejected");
         }
     }
 
     /** Fails unless the candidate list shows this Venue with this address and proposing Member. */
     public void assertCandidate(String... args) {
-        Params params = Params.parse(args,
-                Params.required("name"), Params.optional("address", ""), Params.required("proposedBy"));
+        Params params = Params.parse(
+                args, Params.required("name"), Params.optional("address", ""), Params.required("proposedBy"));
         driver.assertCandidate(
                 aliases.realName(params.value("name")), params.value("address"), params.value("proposedBy"));
     }

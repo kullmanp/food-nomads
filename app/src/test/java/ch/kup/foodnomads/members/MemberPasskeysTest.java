@@ -23,9 +23,11 @@ class MemberPasskeysTest {
         passkeys.add(passkey(anna, credentialId("anna-laptop")));
         passkeys.add(passkey(ben, credentialId("ben-phone")));
 
-        List<WebAuthnCredentialRecord> records = provider.findByUsername(anna.id.toString()).await().indefinitely();
+        List<WebAuthnCredentialRecord> records =
+                provider.findByUsername(anna.id.toString()).await().indefinitely();
 
-        assertThat(records).extracting(WebAuthnCredentialRecord::getCredentialID)
+        assertThat(records)
+                .extracting(WebAuthnCredentialRecord::getCredentialID)
                 .containsExactlyInAnyOrder(credentialId("anna-phone"), credentialId("anna-laptop"));
         assertThat(records).extracting(WebAuthnCredentialRecord::getUsername).containsOnly(anna.id.toString());
     }
@@ -42,7 +44,8 @@ class MemberPasskeysTest {
     void findsAPasskeyByCredentialId() {
         passkeys.add(passkey(anna, credentialId("anna-phone")));
 
-        WebAuthnCredentialRecord record = provider.findByCredentialId(credentialId("anna-phone")).await().indefinitely();
+        WebAuthnCredentialRecord record =
+                provider.findByCredentialId(credentialId("anna-phone")).await().indefinitely();
 
         assertThat(record.getCredentialID()).isEqualTo(credentialId("anna-phone"));
         assertThat(record.getUsername()).isEqualTo(anna.id.toString());
@@ -52,7 +55,9 @@ class MemberPasskeysTest {
     @Test
     void failsForAnUnknownCredentialId() {
         assertThatIllegalArgumentException()
-                .isThrownBy(() -> provider.findByCredentialId(credentialId("unknown")).await().indefinitely());
+                .isThrownBy(() -> provider.findByCredentialId(credentialId("unknown"))
+                        .await()
+                        .indefinitely());
     }
 
     @Test
@@ -61,7 +66,8 @@ class MemberPasskeysTest {
 
         provider.update(credentialId("anna-phone"), 42L).await().indefinitely();
 
-        assertThat(passkeys.find(credentialId("anna-phone")).orElseThrow().counter).isEqualTo(42L);
+        assertThat(passkeys.find(credentialId("anna-phone")).orElseThrow().counter)
+                .isEqualTo(42L);
     }
 
     @Test

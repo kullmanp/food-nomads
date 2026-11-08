@@ -30,7 +30,8 @@ final class VirtualAuthenticator {
         JsonObject params = new JsonObject();
         params.add("options", options);
         this.authenticatorId = cdp.send("WebAuthn.addVirtualAuthenticator", params)
-                .get("authenticatorId").getAsString();
+                .get("authenticatorId")
+                .getAsString();
     }
 
     /** The one passkey on this authenticator. */
@@ -45,7 +46,9 @@ final class VirtualAuthenticator {
     /** The passkey with this credential id, as it is now on this authenticator, sign count included. */
     Passkey passkey(byte[] credentialId) {
         for (var credential : credentials()) {
-            if (Arrays.equals(credentialId, decode(credential.getAsJsonObject().get("credentialId").getAsString()))) {
+            if (Arrays.equals(
+                    credentialId,
+                    decode(credential.getAsJsonObject().get("credentialId").getAsString()))) {
                 return toPasskey(credential.getAsJsonObject());
             }
         }
@@ -55,7 +58,8 @@ final class VirtualAuthenticator {
     /** Puts this passkey on the authenticator as a discoverable credential, unless it is there already. */
     void holdPasskey(Passkey passkey) {
         for (var credential : credentials()) {
-            if (Arrays.equals(passkey.credentialId(),
+            if (Arrays.equals(
+                    passkey.credentialId(),
                     decode(credential.getAsJsonObject().get("credentialId").getAsString()))) {
                 return;
             }

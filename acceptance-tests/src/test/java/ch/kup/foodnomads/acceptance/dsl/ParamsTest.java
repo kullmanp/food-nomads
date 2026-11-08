@@ -13,7 +13,8 @@ class ParamsTest {
     void readsNamedValues() {
         Params params = Params.parse(
                 new String[] {"name: Sternen", "address: Spalenberg 1, Basel"},
-                required("name"), optional("address", ""));
+                required("name"),
+                optional("address", ""));
 
         assertEquals("Sternen", params.value("name"));
         assertEquals("Spalenberg 1, Basel", params.value("address"));
@@ -42,26 +43,26 @@ class ParamsTest {
 
     @Test
     void missingRequiredParamIsRejected() {
-        assertThrows(IllegalArgumentException.class,
-                () -> Params.parse(new String[] {}, required("name")));
+        assertThrows(IllegalArgumentException.class, () -> Params.parse(new String[] {}, required("name")));
     }
 
     @Test
     void unknownParamIsRejected() {
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(
+                IllegalArgumentException.class,
                 () -> Params.parse(new String[] {"nmae: Sternen"}, optional("name", "")));
     }
 
     @Test
     void duplicateParamIsRejected() {
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(
+                IllegalArgumentException.class,
                 () -> Params.parse(new String[] {"name: a", "name: b"}, required("name")));
     }
 
     @Test
     void argWithoutColonIsRejected() {
-        assertThrows(IllegalArgumentException.class,
-                () -> Params.parse(new String[] {"Sternen"}, required("name")));
+        assertThrows(IllegalArgumentException.class, () -> Params.parse(new String[] {"Sternen"}, required("name")));
     }
 
     @Test

@@ -17,7 +17,9 @@ class InMemoryVenueRepository implements VenueRepository {
     @Override
     public List<Venue> newestFirst() {
         return venues.stream()
-                .sorted(Comparator.comparing((Venue v) -> v.proposedAt).reversed().thenComparing(v -> v.id))
+                .sorted(Comparator.comparing((Venue v) -> v.proposedAt)
+                        .reversed()
+                        .thenComparing(v -> v.id))
                 .toList();
     }
 }

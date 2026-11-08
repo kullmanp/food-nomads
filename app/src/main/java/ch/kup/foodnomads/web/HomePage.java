@@ -28,6 +28,7 @@ public class HomePage {
     @GET
     @Produces(MediaType.TEXT_HTML)
     public TemplateInstance get() {
-        return Templates.home(membership.current(identity).map(Member::displayName).orElse(null));
+        return Templates.home(
+                membership.current(identity).map(Member::displayName).orElse(null));
     }
 }

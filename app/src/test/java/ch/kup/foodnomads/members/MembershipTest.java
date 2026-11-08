@@ -48,7 +48,8 @@ class MembershipTest {
         assertThat(member.displayName).isEqualTo("Anna");
         assertThat(member.joinedAt).isBetween(before, Instant.now());
         assertThat(members.find(member.id)).containsSame(member);
-        assertThat(passkeys.find(credentialId("cred-1"))).hasValueSatisfying(p -> assertThat(p.member).isSameAs(member));
+        assertThat(passkeys.find(credentialId("cred-1")))
+                .hasValueSatisfying(p -> assertThat(p.member).isSameAs(member));
     }
 
     @Test
@@ -71,10 +72,14 @@ class MembershipTest {
 
     @Test
     void joiningNeedsADisplayName() {
-        assertThatIllegalArgumentException().isThrownBy(() -> membership.join("secret", null, registration(credentialId("cred-1"))));
-        assertThatIllegalArgumentException().isThrownBy(() -> membership.join("secret", " \t", registration(credentialId("cred-1"))));
+        assertThatIllegalArgumentException()
+                .isThrownBy(() -> membership.join("secret", null, registration(credentialId("cred-1"))));
+        assertThatIllegalArgumentException()
+                .isThrownBy(() -> membership.join("secret", " \t", registration(credentialId("cred-1"))));
         assertThat(members.count()).isZero();
-        assertThat(membership.isInviteValid("secret")).as("a failed join keeps the Invite").isTrue();
+        assertThat(membership.isInviteValid("secret"))
+                .as("a failed join keeps the Invite")
+                .isTrue();
     }
 
     @Test
@@ -113,6 +118,8 @@ class MembershipTest {
     }
 
     private static SecurityIdentity loggedInAs(String principal) {
-        return QuarkusSecurityIdentity.builder().setPrincipal(new QuarkusPrincipal(principal)).build();
+        return QuarkusSecurityIdentity.builder()
+                .setPrincipal(new QuarkusPrincipal(principal))
+                .build();
     }
 }

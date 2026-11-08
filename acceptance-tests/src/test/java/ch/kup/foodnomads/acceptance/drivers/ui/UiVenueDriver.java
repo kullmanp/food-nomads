@@ -51,14 +51,16 @@ class UiVenueDriver implements VenueDriver {
         page.navigate(baseUrl.resolve("venues").toString());
         page.locator("#venue-name").fill(name);
         page.locator("#venue-address").fill(address);
-        page.waitForResponse(r -> r.url().endsWith("/venues") && "POST".equals(r.request().method()),
+        page.waitForResponse(
+                r -> r.url().endsWith("/venues") && "POST".equals(r.request().method()),
                 () -> page.locator("#propose-button").click());
     }
 
     private Locator candidate(String name) {
         return page.locator("#candidates .candidate")
-                .filter(new Locator.FilterOptions().setHas(page.locator(".venue-name")
-                        .getByText(name, new Locator.GetByTextOptions().setExact(true))));
+                .filter(new Locator.FilterOptions()
+                        .setHas(page.locator(".venue-name")
+                                .getByText(name, new Locator.GetByTextOptions().setExact(true))));
     }
 
     @Override

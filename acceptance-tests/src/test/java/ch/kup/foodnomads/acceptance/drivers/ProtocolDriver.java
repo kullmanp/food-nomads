@@ -26,8 +26,9 @@ public interface ProtocolDriver extends AutoCloseable {
         return switch (name) {
             case "api" -> new ApiProtocolDriver(baseUrl());
             case "ui" -> new UiProtocolDriver(baseUrl());
-            default -> throw new IllegalArgumentException(
-                    "Unknown driver '" + name + "', expected -Ddriver=api or -Ddriver=ui");
+            default ->
+                throw new IllegalArgumentException(
+                        "Unknown driver '" + name + "', expected -Ddriver=api or -Ddriver=ui");
         };
     }
 

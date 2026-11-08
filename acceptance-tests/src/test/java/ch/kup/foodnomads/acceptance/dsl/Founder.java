@@ -13,8 +13,7 @@ final class Founder {
 
     static final String ALIAS = "founder";
 
-    private Founder() {
-    }
+    private Founder() {}
 
     static void ensureJoined() {
         if (Holder.FAILURE != null) {

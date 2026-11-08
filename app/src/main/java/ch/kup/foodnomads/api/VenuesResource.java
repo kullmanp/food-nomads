@@ -25,13 +25,11 @@ public class VenuesResource {
 
     public record VenueJson(UUID id, String name, String address, String proposedBy, Instant proposedAt) {
         static VenueJson of(Venue venue) {
-            return new VenueJson(venue.id, venue.name, venue.address, venue.proposedBy.displayName,
-                    venue.proposedAt);
+            return new VenueJson(venue.id, venue.name, venue.address, venue.proposedBy.displayName, venue.proposedAt);
         }
     }
 
-    public record ProposeRequest(String name, String address) {
-    }
+    public record ProposeRequest(String name, String address) {}
 
     @Inject
     Venues venues;
@@ -56,13 +54,17 @@ public class VenuesResource {
         }
         try {
             Venue venue = venues.propose(proposer, request.name(), request.address());
-            return Response.status(Response.Status.CREATED).entity(VenueJson.of(venue)).build();
+            return Response.status(Response.Status.CREATED)
+                    .entity(VenueJson.of(venue))
+                    .build();
         } catch (IllegalArgumentException e) {
             return nameRequired();
         }
     }
 
     private static Response nameRequired() {
-        return Response.status(Response.Status.BAD_REQUEST).entity(Map.of("error", "name-required")).build();
+        return Response.status(Response.Status.BAD_REQUEST)
+                .entity(Map.of("error", "name-required"))
+                .build();
     }
 }

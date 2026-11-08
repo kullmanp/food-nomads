@@ -39,11 +39,9 @@ final class SoftwareAuthenticator {
     private static final int FLAG_USER_VERIFIED = 0x04;
     private static final int FLAG_ATTESTED_CREDENTIAL_DATA = 0x40;
 
-    record Registration(ObjectNode credential, Passkey passkey) {
-    }
+    record Registration(ObjectNode credential, Passkey passkey) {}
 
-    private SoftwareAuthenticator() {
-    }
+    private SoftwareAuthenticator() {}
 
     /**
      * Answers {@code navigator.credentials.create()} for the given creation options.
@@ -58,7 +56,8 @@ final class SoftwareAuthenticator {
         RANDOM.nextBytes(credentialId);
         KeyPair keyPair = newKeyPair();
 
-        byte[] clientDataJson = clientData("webauthn.create", options.path("challenge").asText(), origin);
+        byte[] clientDataJson =
+                clientData("webauthn.create", options.path("challenge").asText(), origin);
         byte[] authenticatorData = authenticatorData(rpId, credentialId, (ECPublicKey) keyPair.getPublic());
         byte[] attestationObject = attestationObject(authenticatorData);
 
@@ -82,7 +81,8 @@ final class SoftwareAuthenticator {
      * @param origin  the origin the "browser" is on, e.g. {@code http://localhost:8080}
      */
     static ObjectNode logIn(JsonNode options, Passkey passkey, String origin) {
-        byte[] clientDataJson = clientData("webauthn.get", options.path("challenge").asText(), origin);
+        byte[] clientDataJson =
+                clientData("webauthn.get", options.path("challenge").asText(), origin);
         byte[] authenticatorData = ByteBuffer.allocate(32 + 1 + 4)
                 .put(sha256(options.path("rpId").asText().getBytes(StandardCharsets.UTF_8)))
                 .put((byte) (FLAG_USER_PRESENT | FLAG_USER_VERIFIED))
@@ -116,7 +116,10 @@ final class SoftwareAuthenticator {
     }
 
     private static byte[] concat(byte[] first, byte[] second) {
-        return ByteBuffer.allocate(first.length + second.length).put(first).put(second).array();
+        return ByteBuffer.allocate(first.length + second.length)
+                .put(first)
+                .put(second)
+                .array();
     }
 
     private static byte[] clientData(String type, String challenge, String origin) {
