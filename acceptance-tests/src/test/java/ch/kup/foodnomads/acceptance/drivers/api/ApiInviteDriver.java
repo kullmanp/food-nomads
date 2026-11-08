@@ -28,4 +28,19 @@ class ApiInviteDriver implements InviteDriver {
 
         assertEquals(401, response.statusCode(), "POST /api/invites: " + response.body());
     }
+
+    @Override
+    public void assertOpen(URI link, String createdBy) {
+        throw new UnsupportedOperationException("Not implemented yet: GET /api/invites lists the Open Invites");
+    }
+
+    @Override
+    public void assertNotOpen(URI link) {
+        throw new UnsupportedOperationException("Not implemented yet: GET /api/invites lists the Open Invites");
+    }
+
+    @Override
+    public void revoke(URI link) {
+        throw new UnsupportedOperationException("Not implemented yet: DELETE /api/invites/{id} revokes an Invite");
+    }
 }

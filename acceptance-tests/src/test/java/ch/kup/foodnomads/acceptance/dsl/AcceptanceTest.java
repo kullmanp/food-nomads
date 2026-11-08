@@ -25,7 +25,7 @@ public abstract class AcceptanceTest {
         InviteLinks inviteLinks = new InviteLinks();
         members = new MembersDsl(driver.members(), inviteLinks);
         venues = new VenuesDsl(driver.venues());
-        invites = new InvitesDsl(driver.invites(), inviteLinks);
+        invites = new InvitesDsl(driver.invites(), inviteLinks, members);
     }
 
     @AfterEach

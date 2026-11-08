@@ -1,6 +1,6 @@
 # 04 List, re-share and revoke Open Invites
 
-Status: ready-for-agent
+Status: claimed
 Blocked by: 01
 Spec: [../spec.md](../spec.md)
 

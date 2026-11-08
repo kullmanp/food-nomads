@@ -37,4 +37,19 @@ class UiInviteDriver implements InviteDriver {
         assertThat(page.locator("main#login")).isVisible();
         assertThat(page.locator("main#invites")).not().isAttached();
     }
+
+    @Override
+    public void assertOpen(URI link, String createdBy) {
+        throw new UnsupportedOperationException("Not implemented yet: the invites page lists the Open Invites");
+    }
+
+    @Override
+    public void assertNotOpen(URI link) {
+        throw new UnsupportedOperationException("Not implemented yet: the invites page lists the Open Invites");
+    }
+
+    @Override
+    public void revoke(URI link) {
+        throw new UnsupportedOperationException("Not implemented yet: the invites page revokes an Invite");
+    }
 }

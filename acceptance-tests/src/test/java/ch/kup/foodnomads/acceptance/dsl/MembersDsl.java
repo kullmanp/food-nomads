@@ -69,7 +69,7 @@ public class MembersDsl {
         driver.assertLoggedOut();
     }
 
-    private String realName(String alias) {
+    String realName(String alias) {
         return Founder.ALIAS.equals(alias) ? alias : aliases.realName(alias);
     }
 }
