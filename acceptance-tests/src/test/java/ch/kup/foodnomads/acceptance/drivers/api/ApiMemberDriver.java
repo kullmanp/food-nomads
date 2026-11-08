@@ -69,20 +69,21 @@ class ApiMemberDriver implements MemberDriver {
     }
 
     @Override
-    public void assertBootstrapInviteRejected(URI joinUrl) {
+    public void assertInviteRejected(URI joinUrl, String displayName) {
         String joinPath = joinApiPath(joinUrl);
+        String name = encode(displayName);
 
-        HttpResponse<String> options = api.get(joinPath + "/options?displayName=Intruder");
+        HttpResponse<String> options = api.get(joinPath + "/options?displayName=" + name);
         assertEquals(403, options.statusCode(), "GET /" + joinPath + "/options: " + options.body());
 
         // Skipping the Invite's options step must not help: take a challenge from Quarkus's
         // own endpoint and present a valid passkey for it.
         HttpResponse<String> challenge =
-                api.get("q/webauthn/register-options-challenge?username=Intruder&displayName=Intruder");
+                api.get("q/webauthn/register-options-challenge?username=" + name + "&displayName=" + name);
         assertEquals(200, challenge.statusCode(), "GET /q/webauthn/register-options-challenge");
         var registration = SoftwareAuthenticator.register(ApiClient.readJson(challenge), api.origin());
 
-        HttpResponse<String> joined = api.post(joinPath, joinRequest("Intruder", registration.credential()));
+        HttpResponse<String> joined = api.post(joinPath, joinRequest(displayName, registration.credential()));
         assertEquals(403, joined.statusCode(), "POST /" + joinPath + ": " + joined.body());
     }
 

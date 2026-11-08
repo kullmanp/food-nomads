@@ -24,6 +24,6 @@ public interface MemberDriver {
     /** Fails unless no Member is logged in on this driver's session. */
     void assertLoggedOut();
 
-    /** Fails unless registering a passkey through the given join URL is refused. */
-    void assertBootstrapInviteRejected(URI joinUrl);
+    /** Fails unless registering a passkey under this display name through the given join URL is refused. */
+    void assertInviteRejected(URI joinUrl, String displayName);
 }

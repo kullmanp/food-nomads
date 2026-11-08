@@ -1,6 +1,6 @@
 # 01 Create and redeem an Invite
 
-Status: ready-for-agent
+Status: claimed
 Blocked by: none
 Spec: [../spec.md](../spec.md)
 

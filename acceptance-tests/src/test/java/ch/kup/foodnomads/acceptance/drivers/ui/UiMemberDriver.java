@@ -67,7 +67,7 @@ class UiMemberDriver implements MemberDriver {
     }
 
     @Override
-    public void assertBootstrapInviteRejected(URI joinUrl) {
+    public void assertInviteRejected(URI joinUrl, String displayName) {
         page.navigate(joinUrl.toString());
 
         assertThat(page.locator("main#join-rejected")).isVisible();

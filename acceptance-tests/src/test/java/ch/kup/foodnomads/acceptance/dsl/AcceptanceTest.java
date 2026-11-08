@@ -15,14 +15,17 @@ public abstract class AcceptanceTest {
     protected SystemDsl system;
     protected MembersDsl members;
     protected VenuesDsl venues;
+    protected InvitesDsl invites;
 
     @BeforeEach
     void setUpDsl() {
         Founder.ensureJoined();
         driver = ProtocolDriver.selected();
         system = new SystemDsl(driver.system());
-        members = new MembersDsl(driver.members());
+        InviteLinks inviteLinks = new InviteLinks();
+        members = new MembersDsl(driver.members(), inviteLinks);
         venues = new VenuesDsl(driver.venues());
+        invites = new InvitesDsl(driver.invites(), inviteLinks);
     }
 
     @AfterEach

@@ -17,6 +17,8 @@ public interface ProtocolDriver extends AutoCloseable {
 
     VenueDriver venues();
 
+    InviteDriver invites();
+
     @Override
     void close();
 

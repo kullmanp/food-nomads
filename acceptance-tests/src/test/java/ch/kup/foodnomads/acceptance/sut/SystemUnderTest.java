@@ -43,7 +43,12 @@ public final class SystemUnderTest {
         if (!matcher.find()) {
             throw new IllegalStateException("The app did not log a Bootstrap Invite");
         }
-        return baseUrl().resolve(URI.create(matcher.group(1)).getRawPath().substring(1));
+        return pointedAtApp(URI.create(matcher.group(1)));
+    }
+
+    /** A link the app handed out, built on its configured base URL, pointed at the app's mapped port. */
+    public URI pointedAtApp(URI link) {
+        return baseUrl().resolve(link.getRawPath().substring(1));
     }
 
     private static final class Holder {
