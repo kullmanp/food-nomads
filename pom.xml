@@ -28,6 +28,8 @@
         <exec-plugin.version>3.6.4</exec-plugin.version>
         <spotless-plugin.version>3.11.0</spotless-plugin.version>
         <palantir-java-format.version>2.103.0</palantir-java-format.version>
+        <checkstyle-plugin.version>3.6.0</checkstyle-plugin.version>
+        <checkstyle.version>14.4.0</checkstyle.version>
 
         <!-- The build formats the code locally. CI sets this to check, so it fails instead. -->
         <spotless.goal>apply</spotless.goal>
@@ -76,6 +78,32 @@
                         <phase>process-sources</phase>
                         <goals>
                             <goal>${spotless.goal}</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <artifactId>maven-checkstyle-plugin</artifactId>
+                <version>${checkstyle-plugin.version}</version>
+                <dependencies>
+                    <dependency>
+                        <groupId>com.puppycrawl.tools</groupId>
+                        <artifactId>checkstyle</artifactId>
+                        <version>${checkstyle.version}</version>
+                    </dependency>
+                </dependencies>
+                <configuration>
+                    <configLocation>${maven.multiModuleProjectDirectory}/config/checkstyle.xml</configLocation>
+                    <includeTestSourceDirectory>true</includeTestSourceDirectory>
+                    <consoleOutput>true</consoleOutput>
+                    <violationSeverity>error</violationSeverity>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>checkstyle</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>check</goal>
                         </goals>
                     </execution>
                 </executions>

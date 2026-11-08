@@ -4,7 +4,11 @@ import ch.kup.foodnomads.acceptance.drivers.MemberDriver;
 import ch.kup.foodnomads.acceptance.drivers.ProtocolDriver;
 import ch.kup.foodnomads.acceptance.drivers.SystemDriver;
 import ch.kup.foodnomads.acceptance.drivers.VenueDriver;
-import com.microsoft.playwright.*;
+import com.microsoft.playwright.Browser;
+import com.microsoft.playwright.BrowserContext;
+import com.microsoft.playwright.BrowserType;
+import com.microsoft.playwright.Page;
+import com.microsoft.playwright.Playwright;
 import java.net.URI;
 
 /**
