@@ -30,6 +30,8 @@
         <palantir-java-format.version>2.103.0</palantir-java-format.version>
         <checkstyle-plugin.version>3.6.0</checkstyle-plugin.version>
         <checkstyle.version>14.4.0</checkstyle.version>
+        <spotbugs-plugin.version>4.10.5.0</spotbugs-plugin.version>
+        <findsecbugs.version>1.14.0</findsecbugs.version>
 
         <!-- The build formats the code locally. CI sets this to check, so it fails instead. -->
         <spotless.goal>apply</spotless.goal>

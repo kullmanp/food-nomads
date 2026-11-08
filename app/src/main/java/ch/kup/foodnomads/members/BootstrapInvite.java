@@ -23,6 +23,7 @@ import org.jboss.logging.Logger;
 public class BootstrapInvite {
 
     private static final Logger LOG = Logger.getLogger(BootstrapInvite.class);
+    private static final SecureRandom RANDOM = new SecureRandom();
 
     private final AtomicReference<String> token = new AtomicReference<>();
     private final MemberRepository members;
@@ -68,7 +69,7 @@ public class BootstrapInvite {
 
     static String randomToken() {
         byte[] bytes = new byte[32];
-        new SecureRandom().nextBytes(bytes);
+        RANDOM.nextBytes(bytes);
         return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
     }
 

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Every exclusion needs a reason. Prefer fixing the finding. -->
+<FindBugsFilter>
+    <!-- Constructor injection stores collaborators, and request records hold the parsed JSON. Neither is a leak. -->
+    <Match>
+        <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
+    </Match>
+    <!-- Panache entities have public fields by convention. -->
+    <Match>
+        <Bug pattern="PA_PUBLIC_PRIMITIVE_ATTRIBUTE"/>
+    </Match>
+</FindBugsFilter>
