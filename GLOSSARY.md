@@ -5,7 +5,7 @@ A small group of former colleagues who meet every two weeks for lunch in and aro
 ## Language
 
 **Member**:
-A person in the group with access to the app. All Members have equal rights.
+A person in the group with access to the app, known by a unique display name. All Members have equal rights.
 _Avoid_: User, account, admin
 
 **Deactivated Member**:
@@ -62,8 +62,12 @@ A picture a Member took at a Lunch, attached to that Lunch.
 _Avoid_: Image, upload, attachment
 
 **Invite**:
-A link one Member gives to a new person so they can join as a Member.
+A single-use, time-limited link one Member gives to a new person so they can join as a Member.
 _Avoid_: Registration, signup
+
+**Open Invite**:
+An Invite that can still be redeemed: it has not been redeemed, revoked or expired. Any Member can see and revoke Open Invites.
+_Avoid_: Pending invite, active invite
 
 **Bootstrap Invite**:
 The one-time Invite that exists only while there are no Members, used to let the very first Member in.
