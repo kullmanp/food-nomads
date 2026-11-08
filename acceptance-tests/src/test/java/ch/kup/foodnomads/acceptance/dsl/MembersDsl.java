@@ -22,7 +22,8 @@ public class MembersDsl {
     /**
      * Joins through the Invite with this alias. With {@code expect: rejected}, fails unless the
      * Invite is refused. With {@code expect: nameTaken} or {@code expect: nameRequired}, fails
-     * unless the display name is refused and no passkey was registered.
+     * unless the display name is refused and no passkey was registered. With
+     * {@code expect: alreadyMember}, fails unless the logged-in Member is told they already are one.
      */
     public void join(String... args) {
         Params params = Params.parse(
@@ -34,9 +35,10 @@ public class MembersDsl {
             case "rejected" -> driver.assertInviteRejected(link, displayName);
             case "nameTaken" -> driver.assertDisplayNameTaken(link, displayName);
             case "nameRequired" -> driver.assertDisplayNameRequired(link, displayName);
+            case "alreadyMember" -> driver.assertAlreadyMember(link, displayName);
             default ->
                 throw new IllegalArgumentException("Unknown expect '" + params.value("expect")
-                        + "', expected success, rejected, nameTaken or nameRequired");
+                        + "', expected success, rejected, nameTaken, nameRequired or alreadyMember");
         }
     }
 

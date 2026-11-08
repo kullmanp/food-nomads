@@ -35,4 +35,10 @@ public interface MemberDriver {
 
     /** Fails unless joining under this blank display name is refused, and no passkey was registered. */
     void assertDisplayNameRequired(URI joinUrl, String displayName);
+
+    /**
+     * Fails unless the Member logged in on this driver's session is told they're already a Member,
+     * on this link and on an unknown one, and no passkey was registered.
+     */
+    void assertAlreadyMember(URI joinUrl, String displayName);
 }

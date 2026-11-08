@@ -87,6 +87,12 @@ class UiMemberDriver implements MemberDriver {
         assertDisplayNameRefused(joinUrl, displayName, "#join-name-required");
     }
 
+    @Override
+    public void assertAlreadyMember(URI joinUrl, String displayName) {
+        throw new UnsupportedOperationException(
+                "Not implemented yet: the join page says the visitor is already a Member and offers no form");
+    }
+
     private void assertDisplayNameRefused(URI joinUrl, String displayName, String problem) {
         authenticator.removePasskeys();
         page.navigate(joinUrl.toString());

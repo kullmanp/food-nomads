@@ -101,6 +101,11 @@ class ApiMemberDriver implements MemberDriver {
         assertDisplayNameRefused(joinUrl, displayName, 400, "display-name-required");
     }
 
+    @Override
+    public void assertAlreadyMember(URI joinUrl, String displayName) {
+        throw new UnsupportedOperationException("Not implemented yet: the join endpoints answer 409 already-member");
+    }
+
     private void assertDisplayNameRefused(URI joinUrl, String displayName, int status, String error) {
         String joinPath = joinApiPath(joinUrl);
 
