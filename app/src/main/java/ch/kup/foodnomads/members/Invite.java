@@ -40,11 +40,15 @@ public class Invite extends PanacheEntityBase {
     @Column(name = "redeemed_at")
     public Instant redeemedAt;
 
+    /** Null unless revoked. */
+    @Column(name = "revoked_at")
+    public Instant revokedAt;
+
     public Instant expiresAt() {
         return createdAt.plus(VALID_FOR);
     }
 
     boolean isOpenAt(Instant now) {
-        return redeemedAt == null && now.isBefore(expiresAt());
+        return redeemedAt == null && revokedAt == null && now.isBefore(expiresAt());
     }
 }

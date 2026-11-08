@@ -32,9 +32,9 @@ import java.util.Locale;
 public class VenuesPage {
 
     /** The group lunches in Basel, so that's the time zone dates are shown in. */
-    private static final ZoneId ZONE = ZoneId.of("Europe/Zurich");
+    static final ZoneId ZONE = ZoneId.of("Europe/Zurich");
 
-    private static final DateTimeFormatter DATE = DateTimeFormatter.ofPattern("d MMM yyyy", Locale.ENGLISH);
+    static final DateTimeFormatter DATE = DateTimeFormatter.ofPattern("d MMM yyyy", Locale.ENGLISH);
 
     public record Candidate(String name, String address, String proposedBy, String proposedAt, String proposedOn) {
         static Candidate of(Venue venue) {

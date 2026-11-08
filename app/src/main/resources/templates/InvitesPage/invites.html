@@ -11,6 +11,11 @@
         form, #new-invite { display: grid; gap: 0.5rem; margin-bottom: 1.5rem; }
         input, button { font: inherit; padding: 0.6rem; }
         [role=status] { margin: 0; }
+        ul { list-style: none; padding: 0; margin: 0; }
+        .open-invite { display: grid; gap: 0.5rem; padding: 0.75rem 0; border-top: 1px solid #ddd; }
+        .open-invite p { margin: 0; color: #555; }
+        .open-invite-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+        .open-invite-actions form { margin: 0; }
     </style>
 </head>
 <body>
@@ -24,32 +29,59 @@
     </form>
 
     {#if link}
-    <section id="new-invite">
+    <section id="new-invite" class="invite">
         <label for="invite-link">{msg:invites_link}</label>
-        <input id="invite-link" value="{link}" readonly>
-        <button id="share-invite" type="button" hidden>{msg:invites_share}</button>
-        <button id="copy-invite" type="button">{msg:invites_copy}</button>
-        <p id="invite-copied" role="status" hidden>{msg:invites_copied}</p>
+        <input id="invite-link" class="invite-link" value="{link}" readonly>
+        <button id="share-invite" class="share-invite" type="button" hidden>{msg:invites_share}</button>
+        <button id="copy-invite" class="copy-invite" type="button">{msg:invites_copy}</button>
+        <p id="invite-copied" class="invite-copied" role="status" hidden>{msg:invites_copied}</p>
     </section>
+    {/if}
+
+    <h2>{msg:invites_open}</h2>
+    {#if openInvites.isEmpty}
+    <p id="no-open-invites">{msg:invites_none}</p>
+    {#else}
+    <ul id="open-invites">
+        {#for invite in openInvites}
+        <li class="open-invite invite">
+            <input class="invite-link" value="{invite.link}" aria-label="{msg:invites_link}" readonly>
+            <p>{msg:invites_created_by} <span class="invite-created-by">{invite.createdBy}</span>,
+                {msg:invites_expires} <time class="invite-expires" datetime="{invite.expiresAt}">{invite.expiresOn}</time></p>
+            <div class="open-invite-actions">
+                <button class="share-invite" type="button" hidden>{msg:invites_share}</button>
+                <button class="copy-invite" type="button">{msg:invites_copy}</button>
+                <form method="post" action="/invites/{invite.id}/revoke"
+                      hx-post="/invites/{invite.id}/revoke" hx-target="#invites" hx-select="#invites" hx-swap="outerHTML">
+                    <button class="revoke-invite" type="submit">{msg:invites_revoke}</button>
+                </form>
+            </div>
+            <p class="invite-copied" role="status" hidden>{msg:invites_copied}</p>
+        </li>
+        {/for}
+    </ul>
     {/if}
 </main>
 <script>
-    // The new link arrives through an htmx swap, so this listens on the body and looks things up late.
+    // The links arrive through htmx swaps, so this listens on the body and looks things up late.
     function offerShare() {
-        const share = document.getElementById("share-invite");
-        if (share && navigator.share) {
-            share.hidden = false;
+        if (navigator.share) {
+            document.querySelectorAll(".share-invite").forEach(share => { share.hidden = false; });
         }
     }
     offerShare();
     document.body.addEventListener("htmx:afterSettle", offerShare);
     document.body.addEventListener("click", event => {
-        const link = document.getElementById("invite-link");
-        if (event.target.id === "share-invite") {
+        const invite = event.target.closest(".invite");
+        if (!invite) {
+            return;
+        }
+        const link = invite.querySelector(".invite-link");
+        if (event.target.classList.contains("share-invite")) {
             navigator.share({ url: link.value }).catch(error => console.error(error));
-        } else if (event.target.id === "copy-invite") {
+        } else if (event.target.classList.contains("copy-invite")) {
             navigator.clipboard.writeText(link.value).then(
-                () => { document.getElementById("invite-copied").hidden = false; },
+                () => { invite.querySelector(".invite-copied").hidden = false; },
                 () => link.select());
         }
     });

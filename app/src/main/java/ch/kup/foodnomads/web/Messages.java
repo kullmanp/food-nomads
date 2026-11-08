@@ -89,6 +89,21 @@ public interface Messages {
     String invites_copied();
 
     @Message
+    String invites_open();
+
+    @Message
+    String invites_none();
+
+    @Message
+    String invites_created_by();
+
+    @Message
+    String invites_expires();
+
+    @Message
+    String invites_revoke();
+
+    @Message
     String join_title();
 
     @Message

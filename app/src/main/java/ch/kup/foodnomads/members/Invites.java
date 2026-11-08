@@ -5,11 +5,12 @@ import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import java.time.Clock;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 import java.util.function.Supplier;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
-/** Creating Invites and redeeming them. */
+/** Creating, listing, revoking and redeeming Invites. */
 @ApplicationScoped
 public class Invites {
 
@@ -51,6 +52,25 @@ public class Invites {
     public boolean isOpen(String token) {
         Instant now = clock.instant();
         return repository.find(token).filter(invite -> invite.isOpenAt(now)).isPresent();
+    }
+
+    /** The Open Invites, newest first, with their creating Member loaded. */
+    @Transactional
+    public List<Invite> open() {
+        Instant now = clock.instant();
+        return repository.newestFirst().stream()
+                .filter(invite -> invite.isOpenAt(now))
+                .toList();
+    }
+
+    /**
+     * Revokes the Invite if it's still open, and it stays stored. Anything else changes nothing.
+     * The row stays locked until the transaction ends, so a revocation can't overwrite a redemption.
+     */
+    @Transactional
+    public void revoke(UUID id) {
+        Instant now = clock.instant();
+        repository.findForUpdate(id).filter(i -> i.isOpenAt(now)).ifPresent(i -> i.revokedAt = now);
     }
 
     /**

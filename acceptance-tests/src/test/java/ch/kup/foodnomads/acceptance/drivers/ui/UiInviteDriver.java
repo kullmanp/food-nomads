@@ -3,6 +3,7 @@ package ch.kup.foodnomads.acceptance.drivers.ui;
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
 
 import ch.kup.foodnomads.acceptance.drivers.InviteDriver;
+import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
 import java.net.URI;
 import java.util.regex.Pattern;
@@ -40,16 +41,32 @@ class UiInviteDriver implements InviteDriver {
 
     @Override
     public void assertOpen(URI link, String createdBy) {
-        throw new UnsupportedOperationException("Not implemented yet: the invites page lists the Open Invites");
+        page.navigate(baseUrl.resolve("invites").toString());
+
+        Locator invite = openInvite(link);
+        assertThat(invite).hasCount(1);
+        assertThat(invite.locator(".invite-created-by")).hasText(createdBy);
+        assertThat(invite.locator(".invite-expires")).isVisible();
     }
 
     @Override
     public void assertNotOpen(URI link) {
-        throw new UnsupportedOperationException("Not implemented yet: the invites page lists the Open Invites");
+        page.navigate(baseUrl.resolve("invites").toString());
+
+        assertThat(page.locator("main#invites")).isVisible();
+        assertThat(openInvite(link)).not().isAttached();
     }
 
     @Override
     public void revoke(URI link) {
-        throw new UnsupportedOperationException("Not implemented yet: the invites page revokes an Invite");
+        page.navigate(baseUrl.resolve("invites").toString());
+        openInvite(link).locator(".revoke-invite").click();
+
+        assertThat(openInvite(link)).not().isAttached();
+    }
+
+    /** The app builds links on its own base URL, so only the paths can be compared. */
+    private Locator openInvite(URI link) {
+        return page.locator("#open-invites .open-invite:has(.invite-link[value$='" + link.getPath() + "'])");
     }
 }
