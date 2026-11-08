@@ -4,6 +4,7 @@ import static ch.kup.foodnomads.members.TestData.credentialId;
 import static ch.kup.foodnomads.members.TestData.member;
 import static ch.kup.foodnomads.members.TestData.registration;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
 
@@ -40,6 +41,48 @@ class MembershipTest {
     void rejectsAnUnknownInvite() {
         assertThat(membership.isInviteValid("other")).isFalse();
         assertThatExceptionOfType(InviteRejectedException.class).isThrownBy(() -> membership.checkInvite("other"));
+    }
+
+    @Test
+    void aVisitorCanJoinWithAValidInvite() {
+        assertThatCode(() -> membership.checkCanJoin(anonymous(), "secret")).doesNotThrowAnyException();
+    }
+
+    @Test
+    void aVisitorCannotJoinWithAnInvalidInvite() {
+        assertThatExceptionOfType(InviteRejectedException.class)
+                .isThrownBy(() -> membership.checkCanJoin(anonymous(), "other"));
+    }
+
+    @Test
+    void aLoggedInMemberCannotJoinAgainAndTheInviteStaysValid() {
+        invites.create(member("Founder"));
+        Member anna = member("Anna");
+        members.add(anna);
+
+        assertThatExceptionOfType(AlreadyMemberException.class)
+                .isThrownBy(() -> membership.checkCanJoin(loggedInAs(anna.id.toString()), "stored"));
+
+        assertThat(membership.isInviteValid("stored")).isTrue();
+    }
+
+    @Test
+    void aLoggedInMemberHearsTheyAreAMemberEvenForAnInvalidInvite() {
+        Member anna = member("Anna");
+        members.add(anna);
+
+        assertThatExceptionOfType(AlreadyMemberException.class)
+                .isThrownBy(() -> membership.checkCanJoin(loggedInAs(anna.id.toString()), "other"));
+    }
+
+    @Test
+    void aSessionWithoutAMemberIsTreatedLikeAVisitor() {
+        String nobody = member("Gone").id.toString();
+
+        assertThatCode(() -> membership.checkCanJoin(loggedInAs(nobody), "secret"))
+                .doesNotThrowAnyException();
+        assertThatExceptionOfType(InviteRejectedException.class)
+                .isThrownBy(() -> membership.checkCanJoin(loggedInAs(nobody), "other"));
     }
 
     @Test
@@ -242,12 +285,14 @@ class MembershipTest {
 
     @Test
     void thereIsNoCurrentMemberWhenAnonymous() {
-        SecurityIdentity anonymous = QuarkusSecurityIdentity.builder()
+        assertThat(membership.current(anonymous())).isEmpty();
+    }
+
+    private static SecurityIdentity anonymous() {
+        return QuarkusSecurityIdentity.builder()
                 .setPrincipal(new QuarkusPrincipal(""))
                 .setAnonymous(true)
                 .build();
-
-        assertThat(membership.current(anonymous)).isEmpty();
     }
 
     private static SecurityIdentity loggedInAs(String principal) {

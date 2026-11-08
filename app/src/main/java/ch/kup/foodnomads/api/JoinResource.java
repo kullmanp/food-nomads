@@ -1,10 +1,12 @@
 package ch.kup.foodnomads.api;
 
+import ch.kup.foodnomads.members.AlreadyMemberException;
 import ch.kup.foodnomads.members.DisplayNameRequiredException;
 import ch.kup.foodnomads.members.DisplayNameTakenException;
 import ch.kup.foodnomads.members.InviteRejectedException;
 import ch.kup.foodnomads.members.Member;
 import ch.kup.foodnomads.members.Membership;
+import io.quarkus.security.identity.SecurityIdentity;
 import io.quarkus.security.webauthn.WebAuthnCredentialRecord;
 import io.quarkus.security.webauthn.WebAuthnSecurity;
 import io.vertx.core.json.JsonObject;
@@ -38,14 +40,19 @@ public class JoinResource {
     @Inject
     WebAuthnSecurity webAuthnSecurity;
 
+    @Inject
+    SecurityIdentity identity;
+
     @GET
     @Path("options")
     public Response options(
             @PathParam("token") String token, @QueryParam("displayName") String displayName, RoutingContext ctx) {
         String name;
         try {
-            membership.checkInvite(token);
+            membership.checkCanJoin(identity, token);
             name = membership.checkDisplayName(displayName);
+        } catch (AlreadyMemberException e) {
+            return alreadyMember();
         } catch (InviteRejectedException e) {
             return inviteRejected();
         } catch (DisplayNameRequiredException e) {
@@ -64,7 +71,9 @@ public class JoinResource {
     @Consumes(MediaType.APPLICATION_JSON)
     public Response join(@PathParam("token") String token, JoinRequest request, RoutingContext ctx) {
         try {
-            membership.checkInvite(token);
+            membership.checkCanJoin(identity, token);
+        } catch (AlreadyMemberException e) {
+            return alreadyMember();
         } catch (InviteRejectedException e) {
             return inviteRejected();
         }
@@ -97,6 +106,12 @@ public class JoinResource {
         webAuthnSecurity.rememberUser(member.id.toString(), ctx);
         return Response.status(Response.Status.CREATED)
                 .entity(MeResource.Me.of(member))
+                .build();
+    }
+
+    private static Response alreadyMember() {
+        return Response.status(Response.Status.CONFLICT)
+                .entity(Map.of("error", "already-member"))
                 .build();
     }
 

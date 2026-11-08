@@ -89,8 +89,19 @@ class UiMemberDriver implements MemberDriver {
 
     @Override
     public void assertAlreadyMember(URI joinUrl, String displayName) {
-        throw new UnsupportedOperationException(
-                "Not implemented yet: the join page says the visitor is already a Member and offers no form");
+        int passkeys = authenticator.passkeyCount();
+
+        assertToldAlreadyMember(joinUrl);
+        assertToldAlreadyMember(joinUrl.resolve("not-an-invite"));
+
+        assertEquals(passkeys, authenticator.passkeyCount(), "passkeys registered by a Member joining again");
+    }
+
+    private void assertToldAlreadyMember(URI url) {
+        page.navigate(url.toString());
+
+        assertThat(page.locator("main#join-already-member")).isVisible();
+        assertThat(page.locator("#join-form")).not().isAttached();
     }
 
     private void assertDisplayNameRefused(URI joinUrl, String displayName, String problem) {

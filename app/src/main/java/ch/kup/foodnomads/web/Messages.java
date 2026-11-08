@@ -111,4 +111,10 @@ public interface Messages {
 
     @Message
     String join_name_required();
+
+    @Message
+    String join_already_member();
+
+    @Message
+    String join_go_home();
 }

@@ -26,12 +26,23 @@ public class Membership {
         this.passkeys = passkeys;
     }
 
-    public boolean isInviteValid(String token) {
+    /**
+     * Fails with {@link AlreadyMemberException} if the caller is a logged-in Member, whatever the
+     * token, and otherwise with {@link InviteRejectedException} unless it belongs to a valid Invite.
+     */
+    public void checkCanJoin(SecurityIdentity caller, String token) {
+        if (current(caller).isPresent()) {
+            throw new AlreadyMemberException();
+        }
+        checkInvite(token);
+    }
+
+    boolean isInviteValid(String token) {
         return bootstrapInvite.isValid(token) || invites.isOpen(token);
     }
 
     /** Fails with {@link InviteRejectedException} unless the token belongs to a valid Invite. */
-    public void checkInvite(String token) {
+    void checkInvite(String token) {
         if (!isInviteValid(token)) {
             throw new InviteRejectedException();
         }

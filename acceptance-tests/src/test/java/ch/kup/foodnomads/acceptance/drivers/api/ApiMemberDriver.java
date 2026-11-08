@@ -16,6 +16,7 @@ import java.util.List;
 class ApiMemberDriver implements MemberDriver {
 
     private static final String CHALLENGE_COOKIE = "_quarkus_webauthn_challenge=";
+    private static final String UNKNOWN_INVITE = "not-an-invite";
 
     private final ApiClient api;
 
@@ -93,20 +94,21 @@ class ApiMemberDriver implements MemberDriver {
 
     @Override
     public void assertDisplayNameTaken(URI joinUrl, String displayName) {
-        assertDisplayNameRefused(joinUrl, displayName, 409, "display-name-taken");
+        assertJoinRefused(joinUrl, displayName, 409, "display-name-taken");
     }
 
     @Override
     public void assertDisplayNameRequired(URI joinUrl, String displayName) {
-        assertDisplayNameRefused(joinUrl, displayName, 400, "display-name-required");
+        assertJoinRefused(joinUrl, displayName, 400, "display-name-required");
     }
 
     @Override
     public void assertAlreadyMember(URI joinUrl, String displayName) {
-        throw new UnsupportedOperationException("Not implemented yet: the join endpoints answer 409 already-member");
+        assertJoinRefused(joinUrl, displayName, 409, "already-member");
+        assertJoinRefused(joinUrl.resolve(UNKNOWN_INVITE), displayName, 409, "already-member");
     }
 
-    private void assertDisplayNameRefused(URI joinUrl, String displayName, int status, String error) {
+    private void assertJoinRefused(URI joinUrl, String displayName, int status, String error) {
         String joinPath = joinApiPath(joinUrl);
 
         HttpResponse<String> options = api.get(joinPath + "/options?displayName=" + encode(displayName));
@@ -119,9 +121,9 @@ class ApiMemberDriver implements MemberDriver {
                 options.headers().allValues("set-cookie").stream()
                         .filter(cookie -> cookie.startsWith(CHALLENGE_COOKIE))
                         .toList(),
-                "challenge cookie on a refused display name");
+                "challenge cookie on a refused join");
 
-        // The name is checked again when joining: skip the options step, take a challenge from
+        // Joining checks again: skip the options step, take a challenge from
         // Quarkus's own endpoint and present a valid passkey for it. The app must not keep it.
         HttpResponse<String> challenge = api.get("q/webauthn/register-options-challenge?username=x&displayName=x");
         assertEquals(200, challenge.statusCode(), "GET /q/webauthn/register-options-challenge");
