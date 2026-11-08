@@ -1,6 +1,7 @@
 package ch.kup.foodnomads.acceptance.drivers.api;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import ch.kup.foodnomads.acceptance.drivers.MemberDriver;
 import ch.kup.foodnomads.acceptance.drivers.Passkeys;
@@ -10,8 +11,11 @@ import java.net.URI;
 import java.net.URLEncoder;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 class ApiMemberDriver implements MemberDriver {
+
+    private static final String CHALLENGE_COOKIE = "_quarkus_webauthn_challenge=";
 
     private final ApiClient api;
 
@@ -89,14 +93,45 @@ class ApiMemberDriver implements MemberDriver {
 
     @Override
     public void assertDisplayNameTaken(URI joinUrl, String displayName) {
-        throw new UnsupportedOperationException(
-                "Not implemented yet: the join endpoints answer 409 display-name-taken");
+        assertDisplayNameRefused(joinUrl, displayName, 409, "display-name-taken");
     }
 
     @Override
     public void assertDisplayNameRequired(URI joinUrl, String displayName) {
-        throw new UnsupportedOperationException(
-                "Not implemented yet: the join endpoints answer 400 display-name-required");
+        assertDisplayNameRefused(joinUrl, displayName, 400, "display-name-required");
+    }
+
+    private void assertDisplayNameRefused(URI joinUrl, String displayName, int status, String error) {
+        String joinPath = joinApiPath(joinUrl);
+
+        HttpResponse<String> options = api.get(joinPath + "/options?displayName=" + encode(displayName));
+        assertEquals(status, options.statusCode(), "GET /" + joinPath + "/options: " + options.body());
+        assertEquals(error, ApiClient.readJson(options).path("error").asText(), options.body());
+        // No ceremony was started: nothing here for an authenticator to answer.
+        assertFalse(ApiClient.readJson(options).has("challenge"), options.body());
+        assertEquals(
+                List.of(),
+                options.headers().allValues("set-cookie").stream()
+                        .filter(cookie -> cookie.startsWith(CHALLENGE_COOKIE))
+                        .toList(),
+                "challenge cookie on a refused display name");
+
+        // The name is checked again when joining: skip the options step, take a challenge from
+        // Quarkus's own endpoint and present a valid passkey for it. The app must not keep it.
+        HttpResponse<String> challenge = api.get("q/webauthn/register-options-challenge?username=x&displayName=x");
+        assertEquals(200, challenge.statusCode(), "GET /q/webauthn/register-options-challenge");
+        var registration = SoftwareAuthenticator.register(ApiClient.readJson(challenge), api.origin());
+
+        HttpResponse<String> joined = api.post(joinPath, joinRequest(displayName, registration.credential()));
+        assertEquals(status, joined.statusCode(), "POST /" + joinPath + ": " + joined.body());
+        assertEquals(error, ApiClient.readJson(joined).path("error").asText(), joined.body());
+
+        HttpResponse<String> loginOptions = api.get("api/login/options");
+        assertEquals(200, loginOptions.statusCode(), "GET /api/login/options: " + loginOptions.body());
+        var credential =
+                SoftwareAuthenticator.logIn(ApiClient.readJson(loginOptions), registration.passkey(), api.origin());
+        HttpResponse<String> loggedIn = api.post("api/login", credential);
+        assertEquals(401, loggedIn.statusCode(), "POST /api/login with the refused passkey: " + loggedIn.body());
     }
 
     /** Invite links look like {@code /join/<token>}; the API equivalent is {@code /api/join/<token>}. */

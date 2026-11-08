@@ -87,6 +87,64 @@ class MembershipTest {
     }
 
     @Test
+    void aFreeDisplayNameIsAccepted() {
+        members.add(member("Anna"));
+
+        assertThat(membership.checkDisplayName("  Ben \t")).isEqualTo("Ben");
+    }
+
+    @Test
+    void aBlankDisplayNameIsRequired() {
+        assertThatExceptionOfType(DisplayNameRequiredException.class)
+                .isThrownBy(() -> membership.checkDisplayName(null));
+        assertThatExceptionOfType(DisplayNameRequiredException.class)
+                .isThrownBy(() -> membership.checkDisplayName(" \t"));
+    }
+
+    @Test
+    void aDisplayNameIsTakenIgnoringCase() {
+        members.add(member("Anna"));
+
+        assertThatExceptionOfType(DisplayNameTakenException.class)
+                .isThrownBy(() -> membership.checkDisplayName("Anna"));
+        assertThatExceptionOfType(DisplayNameTakenException.class)
+                .isThrownBy(() -> membership.checkDisplayName("anna"));
+        assertThatExceptionOfType(DisplayNameTakenException.class)
+                .isThrownBy(() -> membership.checkDisplayName("ANNA"));
+    }
+
+    @Test
+    void aDisplayNameIsTakenIgnoringCaseAndSurroundingSpace() {
+        members.add(member("Jürg"));
+
+        assertThatExceptionOfType(DisplayNameTakenException.class)
+                .isThrownBy(() -> membership.checkDisplayName("  JÜRG "));
+    }
+
+    @Test
+    void joiningRefusesATakenDisplayNameAndLeavesTheInviteValid() {
+        invites.create(member("Founder"));
+        members.add(member("Anna"));
+
+        assertThatExceptionOfType(DisplayNameTakenException.class)
+                .isThrownBy(() -> membership.join("stored", "ANNA", registration(credentialId("cred-1"))));
+
+        assertThat(members.count()).isEqualTo(1);
+        assertThat(passkeys.find(credentialId("cred-1"))).isEmpty();
+        assertThat(membership.isInviteValid("stored")).isTrue();
+    }
+
+    @Test
+    void joiningNeedsADisplayNameEvenThroughAStoredInvite() {
+        invites.create(member("Founder"));
+
+        assertThatExceptionOfType(DisplayNameRequiredException.class)
+                .isThrownBy(() -> membership.join("stored", "  ", registration(credentialId("cred-1"))));
+
+        assertThat(membership.isInviteValid("stored")).isTrue();
+    }
+
+    @Test
     void acceptsAStoredInvite() {
         invites.create(member("Founder"));
 

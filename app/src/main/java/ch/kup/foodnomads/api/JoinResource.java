@@ -1,5 +1,7 @@
 package ch.kup.foodnomads.api;
 
+import ch.kup.foodnomads.members.DisplayNameRequiredException;
+import ch.kup.foodnomads.members.DisplayNameTakenException;
 import ch.kup.foodnomads.members.InviteRejectedException;
 import ch.kup.foodnomads.members.Member;
 import ch.kup.foodnomads.members.Membership;
@@ -40,12 +42,17 @@ public class JoinResource {
     @Path("options")
     public Response options(
             @PathParam("token") String token, @QueryParam("displayName") String displayName, RoutingContext ctx) {
+        String name;
         try {
             membership.checkInvite(token);
+            name = membership.checkDisplayName(displayName);
         } catch (InviteRejectedException e) {
             return inviteRejected();
+        } catch (DisplayNameRequiredException e) {
+            return displayNameRequired();
+        } catch (DisplayNameTakenException e) {
+            return displayNameTaken();
         }
-        String name = displayName == null || displayName.isBlank() ? "Member" : displayName.strip();
         // The authenticator shows the WebAuthn username, so we pass the display name. The
         // username stored with the passkey is the Member id, set when the Member is created.
         var options =
@@ -82,14 +89,26 @@ public class JoinResource {
             member = membership.join(token, request.displayName(), passkey);
         } catch (InviteRejectedException e) {
             return inviteRejected();
-        } catch (IllegalArgumentException e) {
-            return Response.status(Response.Status.BAD_REQUEST)
-                    .entity(Map.of("error", "display-name-required"))
-                    .build();
+        } catch (DisplayNameRequiredException e) {
+            return displayNameRequired();
+        } catch (DisplayNameTakenException e) {
+            return displayNameTaken();
         }
         webAuthnSecurity.rememberUser(member.id.toString(), ctx);
         return Response.status(Response.Status.CREATED)
                 .entity(MeResource.Me.of(member))
+                .build();
+    }
+
+    private static Response displayNameRequired() {
+        return Response.status(Response.Status.BAD_REQUEST)
+                .entity(Map.of("error", "display-name-required"))
+                .build();
+    }
+
+    private static Response displayNameTaken() {
+        return Response.status(Response.Status.CONFLICT)
+                .entity(Map.of("error", "display-name-taken"))
                 .build();
     }
 

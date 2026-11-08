@@ -10,19 +10,33 @@
 <main id="join">
     <h1>{msg:join_title}</h1>
     <p>{msg:join_intro}</p>
-    <form id="join-form">
+    <form id="join-form" novalidate>
         <label for="display-name">{msg:join_display_name}</label>
         <input id="display-name" name="displayName" required maxlength="100" autocomplete="nickname">
         <button id="join-button" type="submit">{msg:join_submit}</button>
     </form>
+    <p id="join-name-taken" role="alert" hidden>{msg:join_name_taken}</p>
+    <p id="join-name-required" role="alert" hidden>{msg:join_name_required}</p>
     <p id="join-error" role="alert" hidden>{msg:join_failed}</p>
 </main>
 <script>
     const token = "{token}";
     const form = document.getElementById("join-form");
+    const problems = [...document.querySelectorAll("#join [role=alert]")];
+    const problemIds = new Map([
+        ["display-name-taken", "join-name-taken"],
+        ["display-name-required", "join-name-required"]
+    ]);
+
+    // The join endpoints say what's wrong with a name; anything else gets the general message.
+    async function problemIdFor(error) {
+        const body = error.cause ? await error.cause.json().catch(() => null) : null;
+        return problemIds.get(body?.error) ?? "join-error";
+    }
+
     form.addEventListener("submit", async event => {
         event.preventDefault();
-        document.getElementById("join-error").hidden = true;
+        problems.forEach(problem => problem.hidden = true);
         const displayName = form.displayName.value.trim();
         const webAuthn = new WebAuthn({ registerOptionsChallengePath: "/api/join/" + token + "/options" });
         try {
@@ -33,12 +47,12 @@
                 body: JSON.stringify({ displayName, credential })
             });
             if (!response.ok) {
-                throw new Error("Join failed with " + response.status);
+                throw new Error("Join failed with " + response.status, { cause: response });
             }
             window.location.href = "/";
         } catch (error) {
             console.error(error);
-            document.getElementById("join-error").hidden = false;
+            document.getElementById(await problemIdFor(error)).hidden = false;
         }
     });
 </script>

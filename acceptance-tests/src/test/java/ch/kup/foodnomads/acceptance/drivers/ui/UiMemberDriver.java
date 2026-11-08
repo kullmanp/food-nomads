@@ -1,6 +1,7 @@
 package ch.kup.foodnomads.acceptance.drivers.ui;
 
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import ch.kup.foodnomads.acceptance.drivers.MemberDriver;
 import ch.kup.foodnomads.acceptance.drivers.Passkey;
@@ -78,13 +79,22 @@ class UiMemberDriver implements MemberDriver {
 
     @Override
     public void assertDisplayNameTaken(URI joinUrl, String displayName) {
-        throw new UnsupportedOperationException(
-                "Not implemented yet: the join form shows the name is taken, with no passkey prompt");
+        assertDisplayNameRefused(joinUrl, displayName, "#join-name-taken");
     }
 
     @Override
     public void assertDisplayNameRequired(URI joinUrl, String displayName) {
-        throw new UnsupportedOperationException(
-                "Not implemented yet: the join form asks for a name, with no passkey prompt");
+        assertDisplayNameRefused(joinUrl, displayName, "#join-name-required");
+    }
+
+    private void assertDisplayNameRefused(URI joinUrl, String displayName, String problem) {
+        authenticator.removePasskeys();
+        page.navigate(joinUrl.toString());
+        page.locator("#display-name").fill(displayName);
+        page.locator("#join-button").click();
+
+        assertThat(page.locator(problem)).isVisible();
+        assertThat(page.locator("#join-form")).isVisible();
+        assertEquals(0, authenticator.passkeyCount(), "passkeys registered for a refused display name");
     }
 }

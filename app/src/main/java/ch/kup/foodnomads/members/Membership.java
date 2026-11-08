@@ -5,6 +5,7 @@ import io.quarkus.security.webauthn.WebAuthnCredentialRecord;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.transaction.Transactional;
 import java.time.Instant;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -37,16 +38,30 @@ public class Membership {
     }
 
     /**
+     * The display name a new Member would get from this input. Fails with
+     * {@link DisplayNameRequiredException} if it's blank and with
+     * {@link DisplayNameTakenException} if another Member has it, ignoring case.
+     */
+    @Transactional
+    public String checkDisplayName(String displayName) {
+        String name = displayName == null ? "" : displayName.strip();
+        if (name.isEmpty()) {
+            throw new DisplayNameRequiredException();
+        }
+        if (members.existsWithLowercaseDisplayName(name.toLowerCase(Locale.ROOT))) {
+            throw new DisplayNameTakenException();
+        }
+        return name;
+    }
+
+    /**
      * Creates a Member with the passkey they just registered, redeeming the Invite.
      *
      * @param passkey a verified registration, whose username is ignored
      */
     @Transactional
     public Member join(String token, String displayName, WebAuthnCredentialRecord passkey) {
-        String name = displayName == null ? "" : displayName.strip();
-        if (name.isEmpty()) {
-            throw new IllegalArgumentException("A display name is required");
-        }
+        String name = checkDisplayName(displayName);
 
         Member member = new Member();
         member.id = UUID.randomUUID();

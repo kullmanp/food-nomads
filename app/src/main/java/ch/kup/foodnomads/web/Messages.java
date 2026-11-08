@@ -105,4 +105,10 @@ public interface Messages {
 
     @Message
     String join_rejected();
+
+    @Message
+    String join_name_taken();
+
+    @Message
+    String join_name_required();
 }

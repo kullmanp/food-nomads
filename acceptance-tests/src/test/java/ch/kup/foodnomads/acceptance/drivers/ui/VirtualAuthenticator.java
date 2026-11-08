@@ -55,6 +55,11 @@ final class VirtualAuthenticator {
         throw new IllegalStateException("The passkey isn't on the authenticator");
     }
 
+    /** How many passkeys are on this authenticator. */
+    int passkeyCount() {
+        return credentials().size();
+    }
+
     void removePasskeys() {
         JsonObject params = new JsonObject();
         params.addProperty("authenticatorId", authenticatorId);
