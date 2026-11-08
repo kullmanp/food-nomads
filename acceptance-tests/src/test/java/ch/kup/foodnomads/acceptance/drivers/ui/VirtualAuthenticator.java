@@ -55,15 +55,15 @@ final class VirtualAuthenticator {
         throw new IllegalStateException("The passkey isn't on the authenticator");
     }
 
-    /** Puts this passkey on the authenticator as a discoverable credential, unless it is there already. */
+    void removePasskeys() {
+        JsonObject params = new JsonObject();
+        params.addProperty("authenticatorId", authenticatorId);
+        cdp.send("WebAuthn.clearCredentials", params);
+    }
+
+    /** Makes this passkey the only one on the authenticator, as a discoverable credential. */
     void holdPasskey(Passkey passkey) {
-        for (var credential : credentials()) {
-            if (Arrays.equals(
-                    passkey.credentialId(),
-                    decode(credential.getAsJsonObject().get("credentialId").getAsString()))) {
-                return;
-            }
-        }
+        removePasskeys();
         JsonObject credential = new JsonObject();
         credential.addProperty("credentialId", encode(passkey.credentialId()));
         credential.addProperty("isResidentCredential", true);

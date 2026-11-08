@@ -1,8 +1,11 @@
 package ch.kup.foodnomads.acceptance.drivers.ui;
 
+import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
+
 import ch.kup.foodnomads.acceptance.drivers.InviteDriver;
 import com.microsoft.playwright.Page;
 import java.net.URI;
+import java.util.regex.Pattern;
 
 class UiInviteDriver implements InviteDriver {
 
@@ -16,11 +19,22 @@ class UiInviteDriver implements InviteDriver {
 
     @Override
     public URI create() {
-        throw new UnsupportedOperationException("Not implemented yet: /invites creates an Invite and shows its link");
+        page.navigate(baseUrl.toString());
+        page.locator("#invites-link").click();
+        page.locator("#create-invite-button").click();
+
+        assertThat(page.locator("#invite-link")).isVisible();
+        page.locator("#copy-invite").click();
+        assertThat(page.locator("#invite-copied")).isVisible();
+        return URI.create(page.locator("#invite-link").inputValue());
     }
 
     @Override
     public void assertNotAccessibleWithoutLogin() {
-        throw new UnsupportedOperationException("Not implemented yet: /invites redirects to login without a Member");
+        page.navigate(baseUrl.resolve("invites").toString());
+
+        assertThat(page).hasURL(Pattern.compile(".*/login$"));
+        assertThat(page.locator("main#login")).isVisible();
+        assertThat(page.locator("main#invites")).not().isAttached();
     }
 }

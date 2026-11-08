@@ -13,17 +13,20 @@ import java.util.UUID;
 public class Membership {
 
     private final BootstrapInvite bootstrapInvite;
+    private final Invites invites;
     private final MemberRepository members;
     private final PasskeyRepository passkeys;
 
-    public Membership(BootstrapInvite bootstrapInvite, MemberRepository members, PasskeyRepository passkeys) {
+    public Membership(
+            BootstrapInvite bootstrapInvite, Invites invites, MemberRepository members, PasskeyRepository passkeys) {
         this.bootstrapInvite = bootstrapInvite;
+        this.invites = invites;
         this.members = members;
         this.passkeys = passkeys;
     }
 
     public boolean isInviteValid(String token) {
-        return bootstrapInvite.isValid(token);
+        return bootstrapInvite.isValid(token) || invites.isOpen(token);
     }
 
     /** Fails with {@link InviteRejectedException} unless the token belongs to a valid Invite. */
@@ -44,15 +47,23 @@ public class Membership {
         if (name.isEmpty()) {
             throw new IllegalArgumentException("A display name is required");
         }
-        bootstrapInvite.consume(token);
 
         Member member = new Member();
         member.id = UUID.randomUUID();
         member.displayName = name;
         member.joinedAt = Instant.now();
+        redeem(token, member);
         members.add(member);
         passkeys.add(Passkey.of(member, passkey));
         return member;
+    }
+
+    private void redeem(String token, Member member) {
+        if (bootstrapInvite.isValid(token)) {
+            bootstrapInvite.consume(token);
+        } else {
+            invites.redeem(token, member);
+        }
     }
 
     public Optional<Member> current(SecurityIdentity identity) {

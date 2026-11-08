@@ -22,6 +22,8 @@ class UiMemberDriver implements MemberDriver {
 
     @Override
     public void join(URI joinUrl, String displayName) {
+        // Whoever logged in on this browser before isn't the person joining.
+        authenticator.removePasskeys();
         page.navigate(joinUrl.toString());
         page.locator("#display-name").fill(displayName);
         page.locator("#join-button").click();

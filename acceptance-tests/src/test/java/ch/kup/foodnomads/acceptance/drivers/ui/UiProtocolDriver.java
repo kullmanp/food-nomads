@@ -11,6 +11,7 @@ import com.microsoft.playwright.BrowserType;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.Playwright;
 import java.net.URI;
+import java.util.List;
 
 /**
  * Talks to the system through the browser, like a Member on their phone. The browser is
@@ -60,7 +61,9 @@ public class UiProtocolDriver implements ProtocolDriver {
                 .setViewportSize(390, 844)
                 .setDeviceScaleFactor(3)
                 .setIsMobile(true)
-                .setHasTouch(true);
+                .setHasTouch(true)
+                // Headless Chromium doesn't grant this by itself. The app's Copy button needs it.
+                .setPermissions(List.of("clipboard-write"));
     }
 
     private static final class SharedBrowser {

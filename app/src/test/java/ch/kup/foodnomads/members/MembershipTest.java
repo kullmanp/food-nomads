@@ -10,6 +10,7 @@ import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException
 import io.quarkus.security.identity.SecurityIdentity;
 import io.quarkus.security.runtime.QuarkusPrincipal;
 import io.quarkus.security.runtime.QuarkusSecurityIdentity;
+import java.time.Duration;
 import java.time.Instant;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -19,7 +20,10 @@ class MembershipTest {
     private final InMemoryMemberRepository members = new InMemoryMemberRepository();
     private final InMemoryPasskeyRepository passkeys = new InMemoryPasskeyRepository();
     private final BootstrapInvite invite = new BootstrapInvite(members, "https://nomads.example", () -> "secret");
-    private final Membership membership = new Membership(invite, members, passkeys);
+    private final MutableClock clock = new MutableClock(Instant.parse("2026-03-01T10:00:00Z"));
+    private final InMemoryInviteRepository inviteRepository = new InMemoryInviteRepository();
+    private final Invites invites = new Invites(inviteRepository, clock, "https://nomads.example", () -> "stored");
+    private final Membership membership = new Membership(invite, invites, members, passkeys);
 
     @BeforeEach
     void startUp() {
@@ -80,6 +84,77 @@ class MembershipTest {
         assertThat(membership.isInviteValid("secret"))
                 .as("a failed join keeps the Invite")
                 .isTrue();
+    }
+
+    @Test
+    void acceptsAStoredInvite() {
+        invites.create(member("Founder"));
+
+        assertThat(membership.isInviteValid("stored")).isTrue();
+        membership.checkInvite("stored");
+    }
+
+    @Test
+    void rejectsAnExpiredInvite() {
+        invites.create(member("Founder"));
+        clock.advance(Duration.ofDays(7));
+
+        assertThat(membership.isInviteValid("stored")).isFalse();
+        assertThatExceptionOfType(InviteRejectedException.class).isThrownBy(() -> membership.checkInvite("stored"));
+    }
+
+    @Test
+    void joiningThroughAStoredInviteRecordsTheNewMember() {
+        Invite stored = invites.create(member("Founder"));
+
+        Member anna = membership.join("stored", "Anna", registration(credentialId("cred-1")));
+
+        assertThat(members.find(anna.id)).containsSame(anna);
+        assertThat(passkeys.find(credentialId("cred-1")))
+                .hasValueSatisfying(p -> assertThat(p.member).isSameAs(anna));
+        assertThat(stored.redeemedBy).isSameAs(anna);
+        assertThat(stored.redeemedAt).isEqualTo(clock.instant());
+    }
+
+    @Test
+    void joiningThroughAStoredInviteLeavesTheBootstrapInviteAlone() {
+        invites.create(member("Founder"));
+
+        membership.join("stored", "Anna", registration(credentialId("cred-1")));
+
+        assertThat(membership.isInviteValid("secret")).isTrue();
+    }
+
+    @Test
+    void joiningThroughTheBootstrapInviteLeavesStoredInvitesAlone() {
+        invites.create(member("Founder"));
+
+        membership.join("secret", "Anna", registration(credentialId("cred-1")));
+
+        assertThat(membership.isInviteValid("stored")).isTrue();
+    }
+
+    @Test
+    void aStoredInviteCanBeRedeemedOnlyOnce() {
+        invites.create(member("Founder"));
+        membership.join("stored", "Anna", registration(credentialId("cred-1")));
+
+        assertThat(membership.isInviteValid("stored")).isFalse();
+        assertThatExceptionOfType(InviteRejectedException.class)
+                .isThrownBy(() -> membership.join("stored", "Ben", registration(credentialId("cred-2"))));
+        assertThat(members.count()).isEqualTo(1);
+        assertThat(passkeys.find(credentialId("cred-2"))).isEmpty();
+    }
+
+    @Test
+    void aFailedJoinLeavesTheStoredInviteValid() {
+        invites.create(member("Founder"));
+
+        assertThatIllegalArgumentException()
+                .isThrownBy(() -> membership.join("stored", " ", registration(credentialId("cred-1"))));
+
+        assertThat(membership.isInviteValid("stored")).isTrue();
+        assertThat(members.count()).isZero();
     }
 
     @Test

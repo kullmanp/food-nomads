@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{msg:invites_title}</title>
+    <script src="/webjars/htmx.org/dist/htmx.min.js"></script>
+    <style>
+        body { margin: 0; font-family: system-ui, sans-serif; line-height: 1.4; }
+        main { max-width: 40rem; margin: 0 auto; padding: 1rem; }
+        form, #new-invite { display: grid; gap: 0.5rem; margin-bottom: 1.5rem; }
+        input, button { font: inherit; padding: 0.6rem; }
+        [role=status] { margin: 0; }
+    </style>
+</head>
+<body>
+<main id="invites">
+    <h1>{msg:invites_title}</h1>
+    <p>{msg:invites_intro}</p>
+
+    <form id="create-invite-form" method="post" action="/invites"
+          hx-post="/invites" hx-target="#invites" hx-select="#invites" hx-swap="outerHTML">
+        <button id="create-invite-button" type="submit">{msg:invites_create}</button>
+    </form>
+
+    {#if link}
+    <section id="new-invite">
+        <label for="invite-link">{msg:invites_link}</label>
+        <input id="invite-link" value="{link}" readonly>
+        <button id="share-invite" type="button" hidden>{msg:invites_share}</button>
+        <button id="copy-invite" type="button">{msg:invites_copy}</button>
+        <p id="invite-copied" role="status" hidden>{msg:invites_copied}</p>
+    </section>
+    {/if}
+</main>
+<script>
+    // The new link arrives through an htmx swap, so this listens on the body and looks things up late.
+    function offerShare() {
+        const share = document.getElementById("share-invite");
+        if (share && navigator.share) {
+            share.hidden = false;
+        }
+    }
+    offerShare();
+    document.body.addEventListener("htmx:afterSettle", offerShare);
+    document.body.addEventListener("click", event => {
+        const link = document.getElementById("invite-link");
+        if (event.target.id === "share-invite") {
+            navigator.share({ url: link.value }).catch(error => console.error(error));
+        } else if (event.target.id === "copy-invite") {
+            navigator.clipboard.writeText(link.value).then(
+                () => { document.getElementById("invite-copied").hidden = false; },
+                () => link.select());
+        }
+    });
+</script>
+</body>
+</html>

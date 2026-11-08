@@ -1,7 +1,10 @@
 package ch.kup.foodnomads.acceptance.drivers.api;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import ch.kup.foodnomads.acceptance.drivers.InviteDriver;
 import java.net.URI;
+import java.net.http.HttpResponse;
 
 class ApiInviteDriver implements InviteDriver {
 
@@ -13,11 +16,16 @@ class ApiInviteDriver implements InviteDriver {
 
     @Override
     public URI create() {
-        throw new UnsupportedOperationException("Not implemented yet: POST /api/invites answers 201 with the link");
+        HttpResponse<String> response = api.post("api/invites", ApiClient.newObject());
+
+        assertEquals(201, response.statusCode(), "POST /api/invites: " + response.body());
+        return URI.create(ApiClient.readJson(response).path("url").asText());
     }
 
     @Override
     public void assertNotAccessibleWithoutLogin() {
-        throw new UnsupportedOperationException("Not implemented yet: POST /api/invites answers 401 without login");
+        HttpResponse<String> response = api.post("api/invites", ApiClient.newObject());
+
+        assertEquals(401, response.statusCode(), "POST /api/invites: " + response.body());
     }
 }

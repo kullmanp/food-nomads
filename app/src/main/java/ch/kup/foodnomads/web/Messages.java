@@ -26,6 +26,9 @@ public interface Messages {
     String home_venues();
 
     @Message
+    String home_invites();
+
+    @Message
     String login_title();
 
     @Message
@@ -63,6 +66,27 @@ public interface Messages {
 
     @Message
     String venues_proposed_by();
+
+    @Message
+    String invites_title();
+
+    @Message
+    String invites_intro();
+
+    @Message
+    String invites_create();
+
+    @Message
+    String invites_link();
+
+    @Message
+    String invites_share();
+
+    @Message
+    String invites_copy();
+
+    @Message
+    String invites_copied();
 
     @Message
     String join_title();

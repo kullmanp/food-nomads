@@ -52,7 +52,11 @@ public class BootstrapInvite {
 
     /** Where to redeem the Invite, if there is one. */
     Optional<String> joinUrl() {
-        return Optional.ofNullable(token.get()).map(t -> baseUrl.replaceAll("/+$", "") + "/join/" + t);
+        return Optional.ofNullable(token.get()).map(t -> joinUrl(baseUrl, t));
+    }
+
+    static String joinUrl(String baseUrl, String token) {
+        return baseUrl.replaceAll("/+$", "") + "/join/" + token;
     }
 
     public boolean isValid(String candidate) {
