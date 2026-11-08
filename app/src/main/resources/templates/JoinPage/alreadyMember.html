@@ -1,15 +1,8 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{msg:join_title}</title>
-</head>
-<body>
+{#include layout}
+{#title}{msg:join_title}{/title}
 <main id="join-already-member">
     <h1>{msg:join_title}</h1>
     <p>{msg:join_already_member}</p>
-    <p><a id="join-go-home" href="/">{msg:join_go_home}</a></p>
+    <a id="join-go-home" class="solid" href="/">{msg:join_go_home}</a>
 </main>
-</body>
-</html>
+{/include}

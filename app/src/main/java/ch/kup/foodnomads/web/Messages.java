@@ -11,6 +11,18 @@ public interface Messages {
     String app_name();
 
     @Message
+    String nav_label();
+
+    @Message
+    String nav_home();
+
+    @Message
+    String nav_invite();
+
+    @Message
+    String sheet_close();
+
+    @Message
     String home_placeholder();
 
     @Message

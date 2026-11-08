@@ -1,16 +1,12 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{msg:login_title}</title>
+{#include layout}
+{#title}{msg:login_title}{/title}
+{#head}
     <script src="/q/webauthn/webauthn.js"></script>
-</head>
-<body>
+{/head}
 <main id="login">
     <h1>{msg:login_title}</h1>
     <p>{msg:login_intro}</p>
-    <button id="log-in-button" type="button">{msg:login_submit}</button>
+    <button id="log-in-button" class="solid" type="button">{msg:login_submit}</button>
     <p id="login-error" role="alert" hidden>{msg:login_failed}</p>
 </main>
 <script>
@@ -34,5 +30,4 @@
         }
     });
 </script>
-</body>
-</html>
+{/include}

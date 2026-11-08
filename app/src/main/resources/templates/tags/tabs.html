@@ -1,0 +1,5 @@
+<nav class="tabs" aria-label="{msg:nav_label}">
+    <a id="home-link" href="/" {#if current == 'home'}aria-current="page"{/if}>{msg:nav_home}</a>
+    <a id="venues-link" href="/venues" {#if current == 'venues'}aria-current="page"{/if}>{msg:home_venues}</a>
+    <a id="invites-link" href="/invites" {#if current == 'invites'}aria-current="page"{/if}>{msg:nav_invite}</a>
+</nav>

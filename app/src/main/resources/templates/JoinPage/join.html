@@ -1,19 +1,15 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{msg:join_title}</title>
+{#include layout}
+{#title}{msg:join_title}{/title}
+{#head}
     <script src="/q/webauthn/webauthn.js"></script>
-</head>
-<body>
+{/head}
 <main id="join">
     <h1>{msg:join_title}</h1>
     <p>{msg:join_intro}</p>
-    <form id="join-form" novalidate>
+    <form id="join-form" class="stack" novalidate>
         <label for="display-name">{msg:join_display_name}</label>
         <input id="display-name" name="displayName" required maxlength="100" autocomplete="nickname">
-        <button id="join-button" type="submit">{msg:join_submit}</button>
+        <button id="join-button" class="solid" type="submit">{msg:join_submit}</button>
     </form>
     <p id="join-name-taken" role="alert" hidden>{msg:join_name_taken}</p>
     <p id="join-name-required" role="alert" hidden>{msg:join_name_required}</p>
@@ -56,5 +52,4 @@
         }
     });
 </script>
-</body>
-</html>
+{/include}

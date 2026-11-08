@@ -1,39 +1,25 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{msg:invites_title}</title>
+{#include layout}
+{#title}{msg:invites_title}{/title}
+{#head}
     <script src="/webjars/htmx.org/dist/htmx.min.js"></script>
-    <style>
-        body { margin: 0; font-family: system-ui, sans-serif; line-height: 1.4; }
-        main { max-width: 40rem; margin: 0 auto; padding: 1rem; }
-        form, #new-invite { display: grid; gap: 0.5rem; margin-bottom: 1.5rem; }
-        input, button { font: inherit; padding: 0.6rem; }
-        [role=status] { margin: 0; }
-        ul { list-style: none; padding: 0; margin: 0; }
-        .open-invite { display: grid; gap: 0.5rem; padding: 0.75rem 0; border-top: 1px solid #ddd; }
-        .open-invite p { margin: 0; color: #555; }
-        .open-invite-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
-        .open-invite-actions form { margin: 0; }
-    </style>
-</head>
-<body>
+{/head}
 <main id="invites">
     <h1>{msg:invites_title}</h1>
     <p>{msg:invites_intro}</p>
 
     <form id="create-invite-form" method="post" action="/invites"
           hx-post="/invites" hx-target="#invites" hx-select="#invites" hx-swap="outerHTML">
-        <button id="create-invite-button" type="submit">{msg:invites_create}</button>
+        <button id="create-invite-button" class="bar" type="submit">{msg:invites_create}</button>
     </form>
 
     {#if link}
     <section id="new-invite" class="invite">
         <label for="invite-link">{msg:invites_link}</label>
         <input id="invite-link" class="invite-link" value="{link}" readonly>
-        <button id="share-invite" class="share-invite" type="button" hidden>{msg:invites_share}</button>
-        <button id="copy-invite" class="copy-invite" type="button">{msg:invites_copy}</button>
+        <div class="pair">
+            <button id="share-invite" class="share-invite" type="button" hidden>{msg:invites_share}</button>
+            <button id="copy-invite" class="copy-invite" type="button">{msg:invites_copy}</button>
+        </div>
         <p id="invite-copied" class="invite-copied" role="status" hidden>{msg:invites_copied}</p>
     </section>
     {/if}
@@ -62,6 +48,7 @@
     </ul>
     {/if}
 </main>
+{#tabs current="invites" /}
 <script>
     // The links arrive through htmx swaps, so this listens on the body and looks things up late.
     function offerShare() {
@@ -86,5 +73,4 @@
         }
     });
 </script>
-</body>
-</html>
+{/include}

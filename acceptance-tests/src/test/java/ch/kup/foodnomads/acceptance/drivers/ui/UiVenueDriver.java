@@ -49,6 +49,7 @@ class UiVenueDriver implements VenueDriver {
 
     private void submitProposal(String name, String address) {
         page.navigate(baseUrl.resolve("venues").toString());
+        page.locator("#propose-open").click();
         page.locator("#venue-name").fill(name);
         page.locator("#venue-address").fill(address);
         page.waitForResponse(
