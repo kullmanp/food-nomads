@@ -12,6 +12,15 @@ Every story is built acceptance-test-first, in Dave Farley's style (ADR-0004). O
 
 Code, comments and docs are in English. User-facing text goes through message bundles.
 
+## Quality gates
+
+Build with JDK 25 (`.sdkmanrc`). Use `./mvnw clean verify`: without `clean`, leftovers in `target/` can break the Quarkus build.
+
+- **Spotless** (Palantir Java Format) formats the code during a local build. CI runs it with `-Dspotless.goal=check` and fails on unformatted code.
+- **Checkstyle** (`config/checkstyle.xml`) covers what the formatter can't: naming, star imports, empty blocks, `System.out`, complexity.
+- **SpotBugs + FindSecBugs** check production code in `app`. Prefer fixing a finding. An exclusion in `config/spotbugs-exclude.xml` needs a reason.
+- **ArchUnit** (`ArchitectureTest`) enforces the layering of ADR-0003 and the repository seam of ADR-0005.
+
 ## Agent skills
 
 ### Issue tracker

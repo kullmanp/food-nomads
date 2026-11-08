@@ -93,6 +93,12 @@
             <version>${assertj.version}</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>com.tngtech.archunit</groupId>
+            <artifactId>archunit</artifactId>
+            <version>${archunit.version}</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -193,6 +199,8 @@
                     </excludedClasses>
                     <excludedTestClasses>
                         <param>*IT</param>
+                        <!-- Reads bytecode and runs no production code, so it can't kill a mutant. -->
+                        <param>*ArchitectureTest</param>
                     </excludedTestClasses>
                     <excludedGroups>
                         <param>io.quarkus.test.junit.QuarkusTest</param>

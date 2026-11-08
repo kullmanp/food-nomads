@@ -32,6 +32,7 @@
         <checkstyle.version>14.4.0</checkstyle.version>
         <spotbugs-plugin.version>4.10.5.0</spotbugs-plugin.version>
         <findsecbugs.version>1.14.0</findsecbugs.version>
+        <archunit.version>1.5.1</archunit.version>
 
         <!-- The build formats the code locally. CI sets this to check, so it fails instead. -->
         <spotless.goal>apply</spotless.goal>
