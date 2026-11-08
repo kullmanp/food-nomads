@@ -26,4 +26,13 @@ public interface MemberDriver {
 
     /** Fails unless registering a passkey under this display name through the given join URL is refused. */
     void assertInviteRejected(URI joinUrl, String displayName);
+
+    /**
+     * Fails unless joining under this display name is refused because another Member has it, and
+     * no passkey was registered.
+     */
+    void assertDisplayNameTaken(URI joinUrl, String displayName);
+
+    /** Fails unless joining under this blank display name is refused, and no passkey was registered. */
+    void assertDisplayNameRequired(URI joinUrl, String displayName);
 }

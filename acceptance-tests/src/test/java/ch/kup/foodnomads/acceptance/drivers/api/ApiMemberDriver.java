@@ -87,6 +87,18 @@ class ApiMemberDriver implements MemberDriver {
         assertEquals(403, joined.statusCode(), "POST /" + joinPath + ": " + joined.body());
     }
 
+    @Override
+    public void assertDisplayNameTaken(URI joinUrl, String displayName) {
+        throw new UnsupportedOperationException(
+                "Not implemented yet: the join endpoints answer 409 display-name-taken");
+    }
+
+    @Override
+    public void assertDisplayNameRequired(URI joinUrl, String displayName) {
+        throw new UnsupportedOperationException(
+                "Not implemented yet: the join endpoints answer 400 display-name-required");
+    }
+
     /** Invite links look like {@code /join/<token>}; the API equivalent is {@code /api/join/<token>}. */
     private static String joinApiPath(URI joinUrl) {
         String path = joinUrl.getPath();

@@ -75,4 +75,16 @@ class UiMemberDriver implements MemberDriver {
         assertThat(page.locator("main#join-rejected")).isVisible();
         assertThat(page.locator("#join-form")).not().isAttached();
     }
+
+    @Override
+    public void assertDisplayNameTaken(URI joinUrl, String displayName) {
+        throw new UnsupportedOperationException(
+                "Not implemented yet: the join form shows the name is taken, with no passkey prompt");
+    }
+
+    @Override
+    public void assertDisplayNameRequired(URI joinUrl, String displayName) {
+        throw new UnsupportedOperationException(
+                "Not implemented yet: the join form asks for a name, with no passkey prompt");
+    }
 }

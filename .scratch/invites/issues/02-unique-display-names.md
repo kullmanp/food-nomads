@@ -1,6 +1,6 @@
 # 02 Unique display names
 
-Status: ready-for-agent
+Status: claimed
 Blocked by: 01
 Spec: [../spec.md](../spec.md)
 
