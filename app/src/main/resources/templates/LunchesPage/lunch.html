@@ -17,6 +17,46 @@
     </form>
     {/if}
 
+    <h2>{msg:lunch_rsvps}</h2>
+    {#if lunch.planned}
+    <div class="rsvp-buttons">
+        <form method="post" action="/lunches/{lunch.id}/rsvp">
+            <input type="hidden" name="answer" value="in">
+            <button id="rsvp-in" class="rsvp-button" type="submit" aria-pressed="{#if rsvps.mine == 'in'}true{#else}false{/if}">{msg:lunch_rsvp_in}</button>
+        </form>
+        <form method="post" action="/lunches/{lunch.id}/rsvp">
+            <input type="hidden" name="answer" value="out">
+            <button id="rsvp-out" class="rsvp-button" type="submit" aria-pressed="{#if rsvps.mine == 'out'}true{#else}false{/if}">{msg:lunch_rsvp_out}</button>
+        </form>
+    </div>
+    {/if}
+    <dl id="rsvps">
+        <dt>{msg:lunch_rsvps_in}</dt>
+        <dd>
+            {#if rsvps.in.isEmpty}
+            <span id="no-rsvps-in" class="no-rsvps">{msg:lunch_rsvps_nobody}</span>
+            {#else}
+            <ul id="rsvps-in" class="rsvp-names">
+                {#for name in rsvps.in}
+                <li class="rsvp-name">{name}</li>
+                {/for}
+            </ul>
+            {/if}
+        </dd>
+        <dt>{msg:lunch_rsvps_out}</dt>
+        <dd>
+            {#if rsvps.out.isEmpty}
+            <span id="no-rsvps-out" class="no-rsvps">{msg:lunch_rsvps_nobody}</span>
+            {#else}
+            <ul id="rsvps-out" class="rsvp-names">
+                {#for name in rsvps.out}
+                <li class="rsvp-name">{name}</li>
+                {/for}
+            </ul>
+            {/if}
+        </dd>
+    </dl>
+
     <h2>{msg:lunch_candidates}</h2>
     {#if candidates.isEmpty}
     <p id="no-candidate-venues">{msg:lunch_no_candidates}</p>
@@ -68,24 +108,24 @@
         {/for}
     </ul>
     {/if}
-    {#if candidateDraft.error == 'venue-visited'}
+    {#if candidateForm.draft.error == 'venue-visited'}
     <p id="add-candidate-venue-visited" role="alert">{msg:lunch_candidate_venue_visited}</p>
-    {#else if candidateDraft.error == 'already-candidate'}
+    {#else if candidateForm.draft.error == 'already-candidate'}
     <p id="add-candidate-already-candidate" role="alert">{msg:lunch_candidate_already}</p>
     {/if}
     {#if lunch.planned}
-    {#if addable.isEmpty}
+    {#if candidateForm.addable.isEmpty}
     <p id="no-addable-venues">{msg:lunch_no_addable_venues}</p>
     {#else}
     <form id="add-candidate-form" class="stack" method="post" action="/lunches/{lunch.id}/candidates" novalidate>
         <label for="candidate-venue">{msg:lunch_candidate_add_label}</label>
         <select id="candidate-venue" name="venue" required>
             <option value="">{msg:lunches_record_choose_venue}</option>
-            {#for venue in addable}
-            <option value="{venue.id}"{#if candidateDraft.venueId == venue.id} selected{/if}>{venue.name}</option>
+            {#for venue in candidateForm.addable}
+            <option value="{venue.id}"{#if candidateForm.draft.venueId == venue.id} selected{/if}>{venue.name}</option>
             {/for}
         </select>
-        {#if candidateDraft.error == 'venue-required'}
+        {#if candidateForm.draft.error == 'venue-required'}
         <p id="add-candidate-venue-required" role="alert">{msg:lunches_record_venue_required}</p>
         {/if}
         <button id="add-candidate-button" class="solid" type="submit">{msg:lunch_candidate_add}</button>
@@ -116,6 +156,29 @@
         {/if}
         <button id="comment-button" class="solid" type="submit">{msg:lunch_comment_send}</button>
     </form>
+
+    {#if lunch.planned}
+    <details id="move" class="sheet"{#if move.draft.error} open{/if}>
+        <summary id="move-open">{msg:lunch_move_title}</summary>
+        <form id="move-form" method="post" action="/lunches/{lunch.id}/date" novalidate>
+            <div class="sheet-head">
+                <h2>{msg:lunch_move_title}</h2>
+                <button class="sheet-close" type="button" aria-label="{msg:sheet_close}"
+                        onclick="this.closest('details').open = false">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5l14 14M19 5 5 19"/></svg>
+                </button>
+            </div>
+            <label for="move-date">{msg:lunches_date}</label>
+            <input id="move-date" name="date" type="date" min="{move.today}" value="{#if move.draft.error}{move.draft.date}{#else}{lunch.date}{/if}" required>
+            {#if move.draft.error == 'date-in-past'}
+            <p id="move-date-in-past" role="alert">{msg:lunches_date_in_past}</p>
+            {#else if move.draft.error == 'date-required'}
+            <p id="move-date-required" role="alert">{msg:lunches_date_required}</p>
+            {/if}
+            <button id="move-button" class="solid" type="submit">{msg:lunch_move}</button>
+        </form>
+    </details>
+    {/if}
 </main>
 {#tabs current="lunches" /}
 {/include}

@@ -911,6 +911,223 @@ class LunchesTest {
                         new ListedCandidate(kunsthalle, false, 0, 0, null));
     }
 
+    @Test
+    void answeringInStoresTheMembersRsvp() {
+        Lunch lunch = lunches.plan(TODAY.plusDays(7));
+
+        Rsvp rsvp = lunches.rsvp(anna, lunch.id, RsvpAnswer.IN);
+
+        assertThat(rsvp.id).isNotNull();
+        assertThat(rsvp.lunch).isSameAs(lunch);
+        assertThat(rsvp.member).isSameAs(anna);
+        assertThat(rsvp.answer).isEqualTo(RsvpAnswer.IN);
+        assertThat(lunch.rsvps).containsExactly(rsvp);
+        assertThat(repository.rsvps()).containsExactly(rsvp);
+    }
+
+    @Test
+    void aNewPlannedLunchHasNoRsvps() {
+        Lunch lunch = lunches.plan(TODAY.plusDays(7));
+
+        assertThat(lunch.rsvps).isEmpty();
+        assertThat(lunch.answered(RsvpAnswer.IN)).isEmpty();
+        assertThat(lunch.answered(RsvpAnswer.OUT)).isEmpty();
+    }
+
+    @Test
+    void eachMemberAnswersForThemselves() {
+        Lunch lunch = lunches.plan(TODAY.plusDays(7));
+
+        lunches.rsvp(anna, lunch.id, RsvpAnswer.IN);
+        lunches.rsvp(ben, lunch.id, RsvpAnswer.OUT);
+        lunches.rsvp(cleo, lunch.id, RsvpAnswer.IN);
+
+        assertThat(lunch.answered(RsvpAnswer.IN)).containsExactly(anna, cleo);
+        assertThat(lunch.answered(RsvpAnswer.OUT)).containsExactly(ben);
+        assertThat(repository.rsvps()).hasSize(3);
+    }
+
+    @Test
+    void answeringAgainReplacesTheAnswer() {
+        Lunch lunch = lunches.plan(TODAY.plusDays(7));
+        Rsvp first = lunches.rsvp(anna, lunch.id, RsvpAnswer.IN);
+
+        Rsvp again = lunches.rsvp(anna, lunch.id, RsvpAnswer.OUT);
+
+        assertThat(again).isSameAs(first);
+        assertThat(again.answer).isEqualTo(RsvpAnswer.OUT);
+        assertThat(lunch.rsvps).containsExactly(first);
+        assertThat(repository.rsvps()).containsExactly(first);
+    }
+
+    @Test
+    void aMemberIsKnownByTheirIdWhenAnsweringAgain() {
+        Lunch lunch = lunches.plan(TODAY.plusDays(7));
+        lunches.rsvp(anna, lunch.id, RsvpAnswer.IN);
+        Member annaAgain = new Member();
+        annaAgain.id = anna.id;
+        annaAgain.displayName = anna.displayName;
+
+        lunches.rsvp(annaAgain, lunch.id, RsvpAnswer.OUT);
+
+        assertThat(repository.rsvps()).hasSize(1);
+        assertThat(lunch.answerOf(annaAgain)).isEqualTo(RsvpAnswer.OUT);
+    }
+
+    @Test
+    void answeringLocksThePlannedLunch() {
+        Lunch lunch = lunches.plan(TODAY.plusDays(7));
+
+        lunches.rsvp(anna, lunch.id, RsvpAnswer.IN);
+
+        assertThat(repository.locked()).containsExactly(lunch.id);
+    }
+
+    @Test
+    void onlyThePlannedLunchTakesRsvps() {
+        Lunch lunch = lunches.plan(TODAY.plusDays(7));
+        lunches.rsvp(anna, lunch.id, RsvpAnswer.IN);
+        lunches.cancel(lunch.id);
+
+        assertThatExceptionOfType(LunchNotPlannedException.class)
+                .isThrownBy(() -> lunches.rsvp(anna, lunch.id, RsvpAnswer.OUT));
+        assertThatExceptionOfType(LunchNotPlannedException.class)
+                .isThrownBy(() -> lunches.rsvp(ben, lunch.id, RsvpAnswer.IN));
+        assertThat(lunch.answered(RsvpAnswer.IN)).containsExactly(anna);
+        assertThat(lunch.answered(RsvpAnswer.OUT)).isEmpty();
+    }
+
+    @Test
+    void anUnknownLunchTakesNoRsvps() {
+        UUID unknown = UUID.randomUUID();
+
+        assertThatExceptionOfType(LunchNotFoundException.class)
+                .isThrownBy(() -> lunches.rsvp(anna, unknown, RsvpAnswer.IN));
+        assertThat(repository.rsvps()).isEmpty();
+    }
+
+    @Test
+    void movingChangesTheDate() {
+        Lunch lunch = lunches.plan(TODAY.plusDays(7));
+
+        lunches.move(lunch.id, TODAY.plusDays(8));
+
+        assertThat(lunch.date).isEqualTo(TODAY.plusDays(8));
+        assertThat(lunch.isPlanned()).isTrue();
+        assertThat(lunches.planned()).containsSame(lunch);
+    }
+
+    @Test
+    void movingClearsTheRsvps() {
+        Lunch lunch = lunches.plan(TODAY.plusDays(7));
+        lunches.rsvp(anna, lunch.id, RsvpAnswer.IN);
+        lunches.rsvp(ben, lunch.id, RsvpAnswer.OUT);
+
+        lunches.move(lunch.id, TODAY.plusDays(8));
+
+        assertThat(lunch.rsvps).isEmpty();
+        assertThat(repository.rsvps()).isEmpty();
+    }
+
+    @Test
+    void movingKeepsTheCommentsCandidateVenuesAndVotes() {
+        Venue sternen = venues.propose(anna, "Sternen", null);
+        Lunch lunch = lunches.plan(TODAY.plusDays(7));
+        LunchComment comment = lunches.comment(lunch.id, anna, "Friday is bad for me after all");
+        CandidateVenue candidate = lunches.addCandidate(lunch.id, sternen.id);
+        Vote vote = lunches.vote(ben, lunch.id, sternen.id, VoteDirection.UP);
+
+        lunches.move(lunch.id, TODAY.plusDays(8));
+
+        assertThat(lunch.comments).containsExactly(comment);
+        assertThat(repository.comments()).containsExactly(comment);
+        assertThat(lunch.candidates).containsExactly(candidate);
+        assertThat(repository.candidates()).containsExactly(candidate);
+        assertThat(candidate.votes).containsExactly(vote);
+        assertThat(repository.votes()).containsExactly(vote);
+        assertThat(lunches.candidates(lunch, ben))
+                .containsExactly(new ListedCandidate(sternen, false, 1, 0, VoteDirection.UP));
+    }
+
+    @Test
+    void movingToTheSameDateKeepsTheRsvps() {
+        Lunch lunch = lunches.plan(TODAY.plusDays(7));
+        Rsvp rsvp = lunches.rsvp(anna, lunch.id, RsvpAnswer.IN);
+
+        lunches.move(lunch.id, TODAY.plusDays(7));
+
+        assertThat(lunch.rsvps).containsExactly(rsvp);
+        assertThat(repository.rsvps()).containsExactly(rsvp);
+    }
+
+    @Test
+    void aLunchCanBeMovedToToday() {
+        Lunch lunch = lunches.plan(TODAY.plusDays(7));
+
+        lunches.move(lunch.id, TODAY);
+
+        assertThat(lunch.date).isEqualTo(TODAY);
+    }
+
+    @Test
+    void aLunchCannotBeMovedBeforeToday() {
+        Lunch lunch = lunches.plan(TODAY.plusDays(7));
+        Rsvp rsvp = lunches.rsvp(anna, lunch.id, RsvpAnswer.IN);
+
+        assertThatExceptionOfType(DateInPastException.class)
+                .isThrownBy(() -> lunches.move(lunch.id, TODAY.minusDays(1)));
+        assertThat(lunch.date).isEqualTo(TODAY.plusDays(7));
+        assertThat(repository.rsvps()).containsExactly(rsvp);
+    }
+
+    @Test
+    void justBeforeMidnightInBaselALunchCanStillBeMovedToToday() {
+        Lunch lunch = lunches.plan(TODAY.plusDays(7));
+        // 23:59:59.999999999 in Basel (UTC+1 in winter) on 1 March.
+        clock.advance(Duration.ofHours(13).minusNanos(1));
+
+        lunches.move(lunch.id, TODAY);
+
+        assertThat(lunch.date).isEqualTo(TODAY);
+    }
+
+    @Test
+    void atMidnightInBaselALunchCannotBeMovedToTheDayBefore() {
+        Lunch lunch = lunches.plan(TODAY.plusDays(7));
+        // 00:00 in Basel on 2 March, while it is still 1 March in UTC.
+        clock.advance(Duration.ofHours(13));
+
+        assertThatExceptionOfType(DateInPastException.class).isThrownBy(() -> lunches.move(lunch.id, TODAY));
+        lunches.move(lunch.id, TODAY.plusDays(1));
+        assertThat(lunch.date).isEqualTo(TODAY.plusDays(1));
+    }
+
+    @Test
+    void movingLocksThePlannedLunch() {
+        Lunch lunch = lunches.plan(TODAY.plusDays(7));
+
+        lunches.move(lunch.id, TODAY.plusDays(8));
+
+        assertThat(repository.locked()).containsExactly(lunch.id);
+    }
+
+    @Test
+    void onlyThePlannedLunchMoves() {
+        Lunch lunch = planAndCancel(TODAY.plusDays(7));
+
+        assertThatExceptionOfType(LunchNotPlannedException.class)
+                .isThrownBy(() -> lunches.move(lunch.id, TODAY.plusDays(8)));
+        assertThat(lunch.date).isEqualTo(TODAY.plusDays(7));
+    }
+
+    @Test
+    void anUnknownLunchCannotBeMoved() {
+        UUID unknown = UUID.randomUUID();
+
+        assertThatExceptionOfType(LunchNotFoundException.class)
+                .isThrownBy(() -> lunches.move(unknown, TODAY.plusDays(8)));
+    }
+
     private Lunch planAndCancel(LocalDate date) {
         Lunch lunch = lunches.plan(date);
         lunches.cancel(lunch.id);

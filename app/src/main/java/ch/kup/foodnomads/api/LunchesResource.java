@@ -13,6 +13,7 @@ import ch.kup.foodnomads.lunches.LunchNotFoundException;
 import ch.kup.foodnomads.lunches.LunchNotPlannedException;
 import ch.kup.foodnomads.lunches.Lunches;
 import ch.kup.foodnomads.lunches.NotACandidateException;
+import ch.kup.foodnomads.lunches.RsvpAnswer;
 import ch.kup.foodnomads.lunches.VenueVisitedException;
 import ch.kup.foodnomads.lunches.VoteDirection;
 import ch.kup.foodnomads.members.Member;
@@ -40,7 +41,10 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
-/** Planning and cancelling Lunches, recording past ones, their Candidate Venues and Votes, and their Lunch Comments. */
+/**
+ * Planning, moving and cancelling Lunches, recording past ones, their Candidate Venues and Votes,
+ * RSVPs, and their Lunch Comments.
+ */
 @Path("/api/lunches")
 @Produces(MediaType.APPLICATION_JSON)
 public class LunchesResource {
@@ -53,9 +57,11 @@ public class LunchesResource {
         }
     }
 
-    public record LunchSummaryJson(UUID id, LocalDate date, String state, VenueJson venue) {
+    /** {@code in} is how many Members are in. */
+    public record LunchSummaryJson(UUID id, LocalDate date, String state, VenueJson venue, int in) {
         static LunchSummaryJson of(Lunch lunch) {
-            return new LunchSummaryJson(lunch.id, lunch.date, stateOf(lunch), VenueJson.of(lunch.venue));
+            return new LunchSummaryJson(
+                    lunch.id, lunch.date, stateOf(lunch), VenueJson.of(lunch.venue), lunch.inCount());
         }
     }
 
@@ -64,7 +70,9 @@ public class LunchesResource {
             LocalDate date,
             String state,
             VenueJson venue,
+            int in,
             List<CandidateJson> candidates,
+            RsvpsJson rsvps,
             List<CommentJson> comments) {
         static LunchDetailJson of(Lunch lunch, List<ListedCandidate> candidates) {
             return new LunchDetailJson(
@@ -72,8 +80,21 @@ public class LunchesResource {
                     lunch.date,
                     stateOf(lunch),
                     VenueJson.of(lunch.venue),
+                    lunch.inCount(),
                     candidates.stream().map(CandidateJson::of).toList(),
+                    RsvpsJson.of(lunch),
                     lunch.chat().stream().map(CommentJson::of).toList());
+        }
+    }
+
+    /** The display names of the Members who are in and of those who are out, by name. */
+    public record RsvpsJson(List<String> in, List<String> out) {
+        static RsvpsJson of(Lunch lunch) {
+            return new RsvpsJson(names(lunch, RsvpAnswer.IN), names(lunch, RsvpAnswer.OUT));
+        }
+
+        private static List<String> names(Lunch lunch, RsvpAnswer answer) {
+            return lunch.answered(answer).stream().map(Member::displayName).toList();
         }
     }
 
@@ -110,6 +131,11 @@ public class LunchesResource {
 
     /** {@code direction} is {@code up} or {@code down}. */
     public record VoteRequest(String direction) {}
+
+    /** {@code answer} is {@code in} or {@code out}. */
+    public record RsvpRequest(String answer) {}
+
+    public record MoveRequest(LocalDate date) {}
 
     @Inject
     Lunches lunches;
@@ -195,6 +221,45 @@ public class LunchesResource {
         currentMember();
         try {
             lunches.cancel(id);
+            return Response.noContent().build();
+        } catch (LunchNotFoundException e) {
+            throw new NotFoundException(e);
+        } catch (LunchNotPlannedException e) {
+            return error(Response.Status.CONFLICT, "lunch-not-planned");
+        }
+    }
+
+    @PUT
+    @Path("{id}/date")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response move(@PathParam("id") UUID id, MoveRequest request) {
+        currentMember();
+        if (request == null || request.date() == null) {
+            return error(Response.Status.BAD_REQUEST, "date-required");
+        }
+        try {
+            lunches.move(id, request.date());
+            return Response.noContent().build();
+        } catch (LunchNotFoundException e) {
+            throw new NotFoundException(e);
+        } catch (LunchNotPlannedException e) {
+            return error(Response.Status.CONFLICT, "lunch-not-planned");
+        } catch (DateInPastException e) {
+            return error(Response.Status.BAD_REQUEST, "date-in-past");
+        }
+    }
+
+    @PUT
+    @Path("{id}/rsvp")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response rsvp(@PathParam("id") UUID id, RsvpRequest request) {
+        Member member = currentMember();
+        RsvpAnswer answer = request == null ? null : answerOf(request.answer());
+        if (answer == null) {
+            return error(Response.Status.BAD_REQUEST, "answer-required");
+        }
+        try {
+            lunches.rsvp(member, id, answer);
             return Response.noContent().build();
         } catch (LunchNotFoundException e) {
             throw new NotFoundException(e);
@@ -304,6 +369,17 @@ public class LunchesResource {
         }
         if ("down".equals(direction)) {
             return VoteDirection.DOWN;
+        }
+        return null;
+    }
+
+    /** {@code in} or {@code out} as an answer, or null for anything else. */
+    private static RsvpAnswer answerOf(String answer) {
+        if ("in".equals(answer)) {
+            return RsvpAnswer.IN;
+        }
+        if ("out".equals(answer)) {
+            return RsvpAnswer.OUT;
         }
         return null;
     }

@@ -9,7 +9,10 @@ import java.util.Optional;
 import java.util.UUID;
 import org.hibernate.exception.ConstraintViolationException;
 
-/** Keeps Lunches, their comments, their Candidate Venues and their Votes in PostgreSQL. Callers run it inside a transaction. */
+/**
+ * Keeps Lunches, their comments, their Candidate Venues, their Votes and their RSVPs in PostgreSQL.
+ * Callers run it inside a transaction.
+ */
 @ApplicationScoped
 class PanacheLunchRepository implements LunchRepository {
 
@@ -44,13 +47,15 @@ class PanacheLunchRepository implements LunchRepository {
                                 + " where l.id = ?1",
                         id)
                 .singleResultOptional();
-        // More queries, so that comments, Candidate Venues and Votes don't multiply each other. They
-        // fill in the same Lunch and Candidate Venues, which this transaction already holds.
+        // More queries, so that comments, Candidate Venues, Votes and RSVPs don't multiply each other.
+        // They fill in the same Lunch and Candidate Venues, which this transaction already holds.
         lunch.ifPresent(l -> {
             Lunch.find("from Lunch l left join fetch l.candidates c left join fetch c.venue where l.id = ?1", id)
                     .singleResult();
             CandidateVenue.find("from CandidateVenue c left join fetch c.votes where c.lunch.id = ?1", id)
                     .list();
+            Lunch.find("from Lunch l left join fetch l.rsvps r left join fetch r.member where l.id = ?1", id)
+                    .singleResult();
         });
         return lunch;
     }
@@ -62,12 +67,15 @@ class PanacheLunchRepository implements LunchRepository {
 
     @Override
     public Optional<Lunch> planned() {
-        return Lunch.find("state", LunchState.PLANNED).firstResultOptional();
+        // There is at most one, and a collection fetch can't be limited to the first row in SQL.
+        return Lunch.find("from Lunch l left join fetch l.rsvps where l.state = ?1", LunchState.PLANNED)
+                .singleResultOptional();
     }
 
     @Override
     public List<Lunch> all() {
-        return Lunch.find("from Lunch l left join fetch l.venue").list();
+        return Lunch.find("from Lunch l left join fetch l.venue left join fetch l.rsvps")
+                .list();
     }
 
     @Override
@@ -95,5 +103,16 @@ class PanacheLunchRepository implements LunchRepository {
     @Override
     public void removeVote(Vote vote) {
         vote.delete();
+    }
+
+    @Override
+    public void addRsvp(Rsvp rsvp) {
+        rsvp.member = Member.getEntityManager().merge(rsvp.member);
+        rsvp.persist();
+    }
+
+    @Override
+    public void removeRsvp(Rsvp rsvp) {
+        rsvp.delete();
     }
 }

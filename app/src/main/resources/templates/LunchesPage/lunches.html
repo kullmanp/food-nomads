@@ -11,6 +11,7 @@
         <span class="lunch-label">{msg:lunches_planned}</span>
         <time class="lunch-date" datetime="{planned.date}">{planned.dateOn}</time>
         <span class="lunch-venue no-venue">{msg:lunch_no_venue}</span>
+        <span class="lunch-in" data-count="{planned.in}">{msg:lunch_in_count(planned.in)}</span>
     </a>
     {#else}
     <form id="plan-form" class="stack" method="post" action="/lunches" novalidate>

@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-/** Where Lunches, their comments, their Candidate Venues and their Votes are kept (ADR-0005). */
+/** Where Lunches, their comments, their Candidate Venues, their Votes and their RSVPs are kept (ADR-0005). */
 public interface LunchRepository {
 
     /**
@@ -14,17 +14,18 @@ public interface LunchRepository {
     void add(Lunch lunch);
 
     /**
-     * The Lunch with its Venue, comments and their authors, and Candidate Venues with their Venues
-     * and Votes loaded.
+     * The Lunch with its Venue, comments and their authors, Candidate Venues with their Venues and
+     * Votes, and RSVPs with their Members loaded.
      */
     Optional<Lunch> find(UUID id);
 
     /** Like {@link #find}, but holds the Lunch for this transaction, so that its state changes one at a time. */
     Optional<Lunch> findForUpdate(UUID id);
 
+    /** The Planned Lunch with its RSVPs, but not their Members. */
     Optional<Lunch> planned();
 
-    /** All Lunches with their Venues, in no particular order. */
+    /** All Lunches with their Venues and RSVPs, but not the RSVPs' Members, in no particular order. */
     List<Lunch> all();
 
     void addComment(LunchComment comment);
@@ -37,4 +38,8 @@ public interface LunchRepository {
     void addVote(Vote vote);
 
     void removeVote(Vote vote);
+
+    void addRsvp(Rsvp rsvp);
+
+    void removeRsvp(Rsvp rsvp);
 }

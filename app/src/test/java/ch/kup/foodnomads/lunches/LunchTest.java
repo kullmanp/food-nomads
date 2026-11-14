@@ -2,6 +2,7 @@ package ch.kup.foodnomads.lunches;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import ch.kup.foodnomads.members.Member;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -55,6 +56,65 @@ class LunchTest {
 
         lunch.state = LunchState.CANCELLED;
         assertThat(lunch.isHeld()).isFalse();
+    }
+
+    @Test
+    void listsWhoIsInAndWhoIsOutByName() {
+        Lunch lunch = new Lunch();
+        Member ben = member("Ben");
+        Member anna = member("Anna");
+        Member oskar = member("Oskar");
+        Member aenne = member("Änne");
+        lunch.rsvps = new ArrayList<>(List.of(
+                rsvp(ben, RsvpAnswer.IN),
+                rsvp(oskar, RsvpAnswer.OUT),
+                rsvp(aenne, RsvpAnswer.IN),
+                rsvp(anna, RsvpAnswer.IN)));
+
+        // As a German speaker sorts them: Änne between Anna and Ben, not after Oskar.
+        assertThat(lunch.answered(RsvpAnswer.IN)).containsExactly(anna, aenne, ben);
+        assertThat(lunch.answered(RsvpAnswer.OUT)).containsExactly(oskar);
+    }
+
+    @Test
+    void countsWhoIsIn() {
+        Lunch lunch = new Lunch();
+        assertThat(lunch.inCount()).isZero();
+
+        lunch.rsvps = new ArrayList<>(List.of(
+                rsvp(member("Anna"), RsvpAnswer.IN),
+                rsvp(member("Ben"), RsvpAnswer.OUT),
+                rsvp(member("Cleo"), RsvpAnswer.IN)));
+
+        assertThat(lunch.inCount()).isEqualTo(2);
+    }
+
+    @Test
+    void findsAMembersAnswerByTheirId() {
+        Lunch lunch = new Lunch();
+        Member anna = member("Anna");
+        Member ben = member("Ben");
+        lunch.rsvps = new ArrayList<>(List.of(rsvp(anna, RsvpAnswer.OUT)));
+        Member annaAgain = new Member();
+        annaAgain.id = anna.id;
+
+        assertThat(lunch.answerOf(annaAgain)).isEqualTo(RsvpAnswer.OUT);
+        assertThat(lunch.answerOf(ben)).isNull();
+    }
+
+    private static Rsvp rsvp(Member member, RsvpAnswer answer) {
+        Rsvp rsvp = new Rsvp();
+        rsvp.id = UUID.randomUUID();
+        rsvp.member = member;
+        rsvp.answer = answer;
+        return rsvp;
+    }
+
+    private static Member member(String displayName) {
+        Member member = new Member();
+        member.id = UUID.randomUUID();
+        member.displayName = displayName;
+        return member;
     }
 
     private static LunchComment comment(Instant writtenAt) {

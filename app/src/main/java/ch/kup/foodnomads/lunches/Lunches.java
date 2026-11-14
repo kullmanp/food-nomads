@@ -19,9 +19,9 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
- * Planning and cancelling Lunches, recording the ones from before the app, putting up Candidate
- * Venues and voting on them, and talking Lunches over in their Lunch Comments. Which Venues are visited follows from
- * the Held Lunches.
+ * Planning, moving and cancelling Lunches, recording the ones from before the app, putting up
+ * Candidate Venues and voting on them, answering in or out, and talking Lunches over in their Lunch
+ * Comments. Which Venues are visited follows from the Held Lunches.
  */
 @ApplicationScoped
 public class Lunches {
@@ -234,6 +234,49 @@ public class Lunches {
         return unvisitedVenues().stream()
                 .filter(venue -> candidateOf(lunch, venue.id).isEmpty())
                 .toList();
+    }
+
+    /**
+     * The Member answers {@code in} or {@code out} for the Planned Lunch. A Member has at most one
+     * RSVP per Lunch, so answering again replaces it. Fails with {@link LunchNotPlannedException}
+     * for a held or cancelled Lunch.
+     */
+    @Transactional
+    public Rsvp rsvp(Member member, UUID lunchId, RsvpAnswer answer) {
+        Lunch lunch = plannedForUpdate(lunchId);
+        Optional<Rsvp> existing = lunch.rsvpOf(member);
+        if (existing.isPresent()) {
+            existing.get().answer = answer;
+            return existing.get();
+        }
+        Rsvp rsvp = new Rsvp();
+        rsvp.id = UUID.randomUUID();
+        rsvp.lunch = lunch;
+        rsvp.member = member;
+        rsvp.answer = answer;
+        lunch.rsvps.add(rsvp);
+        repository.addRsvp(rsvp);
+        return rsvp;
+    }
+
+    /**
+     * Moves the Planned Lunch to this date. Its RSVPs are cleared, because "in" for one day says
+     * nothing about another; its comments, Candidate Venues and Votes stay. Moving it to the date
+     * it has already changes nothing. Fails with {@link LunchNotPlannedException} for a held or
+     * cancelled Lunch and with {@link DateInPastException} before today.
+     */
+    @Transactional
+    public void move(UUID lunchId, LocalDate date) {
+        Lunch lunch = plannedForUpdate(lunchId);
+        if (date.isBefore(today())) {
+            throw new DateInPastException();
+        }
+        if (date.equals(lunch.date)) {
+            return;
+        }
+        lunch.date = date;
+        lunch.rsvps.forEach(repository::removeRsvp);
+        lunch.rsvps.clear();
     }
 
     /** The Lunch, held for this transaction, or {@link LunchNotPlannedException} unless it's planned. */

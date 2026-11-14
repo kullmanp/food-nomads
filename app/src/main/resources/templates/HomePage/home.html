@@ -16,6 +16,7 @@
         <span class="lunch-label">{msg:home_next_lunch}</span>
         <time class="lunch-date" datetime="{plannedLunch.date}">{plannedLunch.dateOn}</time>
         <span class="lunch-venue no-venue">{msg:lunch_no_venue}</span>
+        <span class="lunch-in" data-count="{plannedLunch.in}">{msg:lunch_in_count(plannedLunch.in)}</span>
     </a>
     {#else}
     <a id="plan-lunch-link" class="solid" href="/lunches">{msg:home_plan_lunch}</a>

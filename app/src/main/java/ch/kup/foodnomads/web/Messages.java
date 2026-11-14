@@ -197,6 +197,33 @@ public interface Messages {
     String lunch_no_venue();
 
     @Message
+    String lunch_in_count(int count);
+
+    @Message
+    String lunch_move_title();
+
+    @Message
+    String lunch_move();
+
+    @Message
+    String lunch_rsvps();
+
+    @Message
+    String lunch_rsvp_in();
+
+    @Message
+    String lunch_rsvp_out();
+
+    @Message
+    String lunch_rsvps_in();
+
+    @Message
+    String lunch_rsvps_out();
+
+    @Message
+    String lunch_rsvps_nobody();
+
+    @Message
     String lunch_cancel();
 
     @Message

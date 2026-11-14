@@ -1,6 +1,7 @@
 package ch.kup.foodnomads.acceptance.drivers.ui;
 
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import ch.kup.foodnomads.acceptance.drivers.LunchDriver;
 import com.microsoft.playwright.Dialog;
@@ -11,6 +12,7 @@ import java.net.URI;
 import java.time.LocalDate;
 import java.util.Set;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 class UiLunchDriver implements LunchDriver {
 
@@ -250,27 +252,53 @@ class UiLunchDriver implements LunchDriver {
 
     @Override
     public void rsvp(String lunchId, String answer) {
-        throw new UnsupportedOperationException("Not implemented yet");
+        page.navigate(lunchPage(lunchId));
+        page.locator("#rsvp-" + answer).click();
+
+        assertThat(page.locator("main#lunch")).isVisible();
+        assertThat(page.locator("#rsvp-" + answer)).hasAttribute("aria-pressed", "true");
+        assertThat(page.locator(".rsvp-button[aria-pressed=true]")).hasCount(1);
     }
 
+    /** The page offers no In and Out buttons unless the Lunch is planned. */
     @Override
     public void assertRsvpRejectedAsNotPlanned(String lunchId, String answer) {
-        throw new UnsupportedOperationException("Not implemented yet");
+        page.navigate(lunchPage(lunchId));
+
+        assertThat(page.locator("#rsvps")).isVisible();
+        assertThat(page.locator("#lunch-state")).not().hasAttribute("data-state", "planned");
+        assertThat(page.locator("#rsvp-" + answer)).not().isAttached();
     }
 
     @Override
     public void assertRsvps(String lunchId, Set<String> in, Set<String> out) {
-        throw new UnsupportedOperationException("Not implemented yet");
+        page.navigate(lunchPage(lunchId));
+
+        assertThat(page.locator("#rsvps")).isVisible();
+        assertNames("#rsvps-in", in);
+        assertNames("#rsvps-out", out);
+
+        page.navigate(baseUrl.toString());
+        Locator card = page.locator("#planned-lunch[href='/lunches/" + lunchId + "']");
+        if (card.count() > 0) {
+            assertThat(card.locator(".lunch-in")).hasAttribute("data-count", String.valueOf(in.size()));
+        }
     }
 
     @Override
     public void move(String lunchId, LocalDate date) {
-        throw new UnsupportedOperationException("Not implemented yet");
+        submitMove(lunchId, date);
+
+        assertThat(page.locator("#lunch-date")).hasAttribute("datetime", date.toString());
+        assertThat(page.locator("#move-date-in-past")).not().isAttached();
     }
 
     @Override
     public void assertMoveRejectedAsInThePast(String lunchId, LocalDate date) {
-        throw new UnsupportedOperationException("Not implemented yet");
+        submitMove(lunchId, date);
+
+        assertThat(page.locator("#move-date-in-past")).isVisible();
+        assertThat(page.locator("#lunch-date")).not().hasAttribute("datetime", date.toString());
     }
 
     @Override
@@ -306,6 +334,21 @@ class UiLunchDriver implements LunchDriver {
             throw new AssertionError("Not on a Lunch page: " + page.url());
         }
         return matcher.group(1);
+    }
+
+    private void submitMove(String lunchId, LocalDate date) {
+        page.navigate(lunchPage(lunchId));
+        page.locator("#move-open").click();
+        page.locator("#move-date").fill(date.toString());
+        page.locator("#move-button").click();
+    }
+
+    /** Fails unless the list with this selector shows exactly these names, or is missing for none. */
+    private void assertNames(String list, Set<String> names) {
+        Locator shown = page.locator(list + " .rsvp-name");
+        assertThat(shown).hasCount(names.size());
+        Set<String> texts = shown.allTextContents().stream().map(String::strip).collect(Collectors.toSet());
+        assertEquals(names, texts, "names in " + list);
     }
 
     private void submitComment(String lunchId, String text) {

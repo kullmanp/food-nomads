@@ -2,6 +2,7 @@ package ch.kup.foodnomads.acceptance.drivers.api;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import ch.kup.foodnomads.acceptance.drivers.LunchDriver;
@@ -204,27 +205,47 @@ class ApiLunchDriver implements LunchDriver {
 
     @Override
     public void rsvp(String lunchId, String answer) {
-        throw new UnsupportedOperationException("Not implemented yet");
+        HttpResponse<String> response = api.put(rsvpPath(lunchId), rsvpRequest(answer));
+
+        assertEquals(204, response.statusCode(), "PUT /api/lunches/{id}/rsvp: " + response.body());
     }
 
     @Override
     public void assertRsvpRejectedAsNotPlanned(String lunchId, String answer) {
-        throw new UnsupportedOperationException("Not implemented yet");
+        assertRefused(api.put(rsvpPath(lunchId), rsvpRequest(answer)), 409, "lunch-not-planned");
     }
 
     @Override
     public void assertRsvps(String lunchId, Set<String> in, Set<String> out) {
-        throw new UnsupportedOperationException("Not implemented yet");
+        JsonNode lunch = lunch(lunchId);
+        JsonNode rsvps = lunch.path("rsvps");
+        List<String> listedIn = names(rsvps.path("in"));
+        List<String> listedOut = names(rsvps.path("out"));
+
+        assertEquals(in.size(), listedIn.size(), "in in " + rsvps);
+        assertEquals(in, Set.copyOf(listedIn), "in in " + rsvps);
+        assertEquals(out.size(), listedOut.size(), "out in " + rsvps);
+        assertEquals(out, Set.copyOf(listedOut), "out in " + rsvps);
+        assertEquals(in.size(), lunch.path("in").asInt(-1), "in in " + lunch);
+
+        JsonNode listed = listed(lunchId);
+        assertEquals(in.size(), listed.path("in").asInt(-1), "in in " + listed);
     }
 
     @Override
     public void move(String lunchId, LocalDate date) {
-        throw new UnsupportedOperationException("Not implemented yet");
+        HttpResponse<String> response = api.put(datePath(lunchId), planRequest(date));
+
+        assertEquals(204, response.statusCode(), "PUT /api/lunches/{id}/date: " + response.body());
+        JsonNode lunch = lunch(lunchId);
+        assertEquals(date.toString(), lunch.path("date").asText(), "date in " + lunch);
     }
 
     @Override
     public void assertMoveRejectedAsInThePast(String lunchId, LocalDate date) {
-        throw new UnsupportedOperationException("Not implemented yet");
+        assertRefused(api.put(datePath(lunchId), planRequest(date)), 400, "date-in-past");
+        JsonNode lunch = lunch(lunchId);
+        assertNotEquals(date.toString(), lunch.path("date").asText(), "date in " + lunch);
     }
 
     @Override
@@ -252,6 +273,24 @@ class ApiLunchDriver implements LunchDriver {
                         candidate.path("venue").path("name").asText().equals(venue))
                 .findFirst()
                 .orElseThrow(() -> new AssertionError("No Candidate Venue '" + venue + "' in " + candidates));
+    }
+
+    private static List<String> names(JsonNode array) {
+        return StreamSupport.stream(array.spliterator(), false)
+                .map(JsonNode::asText)
+                .toList();
+    }
+
+    private static String rsvpPath(String lunchId) {
+        return "api/lunches/" + lunchId + "/rsvp";
+    }
+
+    private static ObjectNode rsvpRequest(String answer) {
+        return ApiClient.newObject().put("answer", answer);
+    }
+
+    private static String datePath(String lunchId) {
+        return "api/lunches/" + lunchId + "/date";
     }
 
     private String votePath(String lunchId, String venue) {

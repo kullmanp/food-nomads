@@ -225,6 +225,22 @@ main > .poster {
 #lunch > h1 { font-size: 3.5rem; }
 #lunch > form:not(.stack) { margin: 0 var(--gutter); }
 .cancel-lunch { color: var(--alert); }
+.lunch-in { font-size: 1.0625rem; font-weight: 800; }
+.rsvp-buttons { display: flex; gap: 0.75rem; margin: 0 var(--gutter) 0.75rem; }
+.rsvp-buttons form { flex: 1; margin: 0; }
+.rsvp-button {
+    width: 100%;
+    min-height: 3.375rem;
+    border: 2px solid var(--ink);
+    background: var(--paper);
+    font-size: 1.1875rem;
+    font-weight: 800;
+}
+.rsvp-button[aria-pressed=true] { background: var(--ink); color: var(--paper); }
+#rsvps { display: grid; grid-template-columns: auto 1fr; gap: 0.375rem 1rem; margin: 0 var(--gutter) 1.25rem; }
+#rsvps dt { font-weight: 800; }
+#rsvps dd { margin: 0; }
+.rsvp-names { display: flex; flex-wrap: wrap; gap: 0 0.75rem; margin: 0; padding: 0; list-style: none; }
 #candidate-venues { margin: 0 0 1.25rem; padding: 0; border-top: 2px solid var(--ink); list-style: none; }
 .candidate-venue {
     display: flex;
