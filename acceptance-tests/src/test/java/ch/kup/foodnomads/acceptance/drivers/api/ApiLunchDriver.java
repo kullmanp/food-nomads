@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.net.http.HttpResponse;
 import java.time.LocalDate;
+import java.util.Set;
 import java.util.stream.StreamSupport;
 
 class ApiLunchDriver implements LunchDriver {
@@ -133,6 +134,26 @@ class ApiLunchDriver implements LunchDriver {
         JsonNode listed = listed(lunchId);
         assertEquals("held", listed.path("state").asText(), "state in " + listed);
         assertEquals(venue, listed.path("venue").path("name").asText(), "venue in " + listed);
+    }
+
+    @Override
+    public void addCandidate(String lunchId, String venue) {
+        throw new UnsupportedOperationException("Not implemented yet");
+    }
+
+    @Override
+    public void assertAddCandidateRejectedAsVenueVisited(String lunchId, String venue) {
+        throw new UnsupportedOperationException("Not implemented yet");
+    }
+
+    @Override
+    public void removeCandidate(String lunchId, String venue) {
+        throw new UnsupportedOperationException("Not implemented yet");
+    }
+
+    @Override
+    public void assertCandidates(String lunchId, Set<String> venues, Set<String> visited) {
+        throw new UnsupportedOperationException("Not implemented yet");
     }
 
     @Override

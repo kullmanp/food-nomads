@@ -12,10 +12,10 @@ public interface VenueDriver {
     void assertProposalRejected(String name, String address);
 
     /**
-     * Fails unless the candidate list shows a Venue with this name, address (empty means none) and
+     * Fails unless the Venue list shows a Venue with this name, address (empty means none) and
      * proposing Member's display name.
      */
-    void assertCandidate(String name, String address, String proposedBy);
+    void assertListed(String name, String address, String proposedBy);
 
     /** Fails unless the Venue list marks the Venue with this name as visited. */
     void assertVisited(String name);

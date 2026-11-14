@@ -35,11 +35,11 @@ public class VenuesDsl {
         }
     }
 
-    /** Fails unless the candidate list shows this Venue with this address and proposing Member. */
-    public void assertCandidate(String... args) {
+    /** Fails unless the Venue list shows this Venue with this address and proposing Member. */
+    public void assertListed(String... args) {
         Params params = Params.parse(
                 args, Params.required("name"), Params.optional("address", ""), Params.required("proposedBy"));
-        driver.assertCandidate(
+        driver.assertListed(
                 aliases.realName(params.value("name")), params.value("address"), params.value("proposedBy"));
     }
 

@@ -1,6 +1,7 @@
 package ch.kup.foodnomads.acceptance.drivers;
 
 import java.time.LocalDate;
+import java.util.Set;
 
 /** Lunches, known to the tests by the id the app gave them. */
 public interface LunchDriver {
@@ -52,6 +53,21 @@ public interface LunchDriver {
 
     /** Fails unless the Lunch with this id is a Held Lunch, on this date, at the Venue with this name. */
     void assertHeld(String lunchId, LocalDate date, String venue);
+
+    /** Puts up the Venue with this name as a Candidate Venue of the Lunch with this id, and fails unless it was accepted. */
+    void addCandidate(String lunchId, String venue);
+
+    /** Fails unless putting up the Venue with this name for the Lunch with this id is refused because it's visited. */
+    void assertAddCandidateRejectedAsVenueVisited(String lunchId, String venue);
+
+    /** Removes the Candidate Venue with this name from the Lunch with this id, and fails unless it was accepted. */
+    void removeCandidate(String lunchId, String venue);
+
+    /**
+     * Fails unless the Lunch with this id lists exactly the Candidate Venues with these names, and
+     * marks exactly those named in {@code visited} as visited.
+     */
+    void assertCandidates(String lunchId, Set<String> venues, Set<String> visited);
 
     /**
      * Fails unless this driver, with no Member logged in, is kept away from the Lunches: the UI

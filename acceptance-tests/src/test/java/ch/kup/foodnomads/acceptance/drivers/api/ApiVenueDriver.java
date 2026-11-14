@@ -33,7 +33,7 @@ class ApiVenueDriver implements VenueDriver {
     }
 
     @Override
-    public void assertCandidate(String name, String address, String proposedBy) {
+    public void assertListed(String name, String address, String proposedBy) {
         JsonNode venue = listed(name);
         assertEquals(address, venue.path("address").asText(""), "address in " + venue);
         assertEquals(proposedBy, venue.path("proposedBy").asText(), "proposedBy in " + venue);

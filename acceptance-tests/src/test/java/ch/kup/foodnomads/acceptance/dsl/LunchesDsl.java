@@ -3,8 +3,11 @@ package ch.kup.foodnomads.acceptance.dsl;
 import ch.kup.foodnomads.acceptance.drivers.LunchDriver;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * DSL for Lunches. A Lunch alias stands for the id the driver got back when planning it. Dates
@@ -135,6 +138,41 @@ public class LunchesDsl {
                 idOf(params.value("lunch")), date(params.value("date")), venueAliases.realName(params.value("venue")));
     }
 
+    /**
+     * Puts up {@code venue} as a Candidate Venue of {@code lunch}, as the logged-in Member. With
+     * {@code expect: venueVisited}, fails unless it is refused because the Venue is visited.
+     */
+    public void addCandidate(String... args) {
+        Params params = Params.parse(
+                args, Params.required("lunch"), Params.required("venue"), Params.optional("expect", "success"));
+        String id = idOf(params.value("lunch"));
+        String venue = venueAliases.realName(params.value("venue"));
+        switch (params.value("expect")) {
+            case "success" -> driver.addCandidate(id, venue);
+            case "venueVisited" -> driver.assertAddCandidateRejectedAsVenueVisited(id, venue);
+            default ->
+                throw new IllegalArgumentException(
+                        "Unknown expect '" + params.value("expect") + "', expected success or venueVisited");
+        }
+    }
+
+    /** Removes the Candidate Venue {@code venue} from {@code lunch}, as the logged-in Member. */
+    public void removeCandidate(String... args) {
+        Params params = Params.parse(args, Params.required("lunch"), Params.required("venue"));
+        driver.removeCandidate(idOf(params.value("lunch")), venueAliases.realName(params.value("venue")));
+    }
+
+    /**
+     * Fails unless {@code lunch} lists exactly the Candidate Venues in {@code venues}
+     * (comma-separated, in any order), and marks exactly those in {@code visited} as visited.
+     */
+    public void assertCandidates(String... args) {
+        Params params =
+                Params.parse(args, Params.required("lunch"), Params.required("venues"), Params.optional("visited", ""));
+        driver.assertCandidates(
+                idOf(params.value("lunch")), venueNames(params.value("venues")), venueNames(params.value("visited")));
+    }
+
     /** Fails unless the Lunches are refused to someone who isn't logged in. */
     public void assertNotAccessibleWithoutLogin() {
         driver.assertNotAccessibleWithoutLogin();
@@ -146,6 +184,15 @@ public class LunchesDsl {
             throw new IllegalArgumentException("No Lunch planned or recorded with alias '" + alias + "'");
         }
         return id;
+    }
+
+    /** The real names of these comma-separated Venue aliases. */
+    private Set<String> venueNames(String aliases) {
+        return Arrays.stream(aliases.split(","))
+                .map(String::strip)
+                .filter(alias -> !alias.isEmpty())
+                .map(venueAliases::realName)
+                .collect(Collectors.toUnmodifiableSet());
     }
 
     /** {@code today}, or a number of days from today in Basel such as {@code +7} or {@code -60}. */

@@ -9,6 +9,7 @@ import com.microsoft.playwright.Page;
 import com.microsoft.playwright.options.SelectOption;
 import java.net.URI;
 import java.time.LocalDate;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 class UiLunchDriver implements LunchDriver {
@@ -162,6 +163,26 @@ class UiLunchDriver implements LunchDriver {
         assertThat(page.locator("#lunch-venue")).hasText(venue);
         assertThat(page.locator("#cancel-lunch-button")).not().isAttached();
         assertThat(page.locator("#comment-form")).isVisible();
+    }
+
+    @Override
+    public void addCandidate(String lunchId, String venue) {
+        throw new UnsupportedOperationException("Not implemented yet");
+    }
+
+    @Override
+    public void assertAddCandidateRejectedAsVenueVisited(String lunchId, String venue) {
+        throw new UnsupportedOperationException("Not implemented yet");
+    }
+
+    @Override
+    public void removeCandidate(String lunchId, String venue) {
+        throw new UnsupportedOperationException("Not implemented yet");
+    }
+
+    @Override
+    public void assertCandidates(String lunchId, Set<String> venues, Set<String> visited) {
+        throw new UnsupportedOperationException("Not implemented yet");
     }
 
     @Override

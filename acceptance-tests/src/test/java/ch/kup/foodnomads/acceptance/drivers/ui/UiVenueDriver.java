@@ -23,7 +23,7 @@ class UiVenueDriver implements VenueDriver {
         submitProposal(name, address);
 
         assertThat(page.locator("#propose-error")).not().isAttached();
-        assertThat(candidate(name)).isVisible();
+        assertThat(listed(name)).isVisible();
     }
 
     @Override
@@ -34,17 +34,17 @@ class UiVenueDriver implements VenueDriver {
     }
 
     @Override
-    public void assertCandidate(String name, String address, String proposedBy) {
+    public void assertListed(String name, String address, String proposedBy) {
         page.navigate(baseUrl.resolve("venues").toString());
 
-        Locator candidate = candidate(name);
-        assertThat(candidate).hasCount(1);
+        Locator listed = listed(name);
+        assertThat(listed).hasCount(1);
         if (address.isEmpty()) {
-            assertThat(candidate.locator(".venue-address")).not().isAttached();
+            assertThat(listed.locator(".venue-address")).not().isAttached();
         } else {
-            assertThat(candidate.locator(".venue-address")).hasText(address);
+            assertThat(listed.locator(".venue-address")).hasText(address);
         }
-        assertThat(candidate.locator(".venue-proposed-by")).hasText(proposedBy);
+        assertThat(listed.locator(".venue-proposed-by")).hasText(proposedBy);
     }
 
     private void submitProposal(String name, String address) {
@@ -57,7 +57,7 @@ class UiVenueDriver implements VenueDriver {
                 () -> page.locator("#propose-button").click());
     }
 
-    private Locator candidate(String name) {
+    private Locator listed(String name) {
         return page.locator("#candidates .candidate")
                 .filter(new Locator.FilterOptions()
                         .setHas(page.locator(".venue-name")
@@ -68,18 +68,18 @@ class UiVenueDriver implements VenueDriver {
     public void assertVisited(String name) {
         page.navigate(baseUrl.resolve("venues").toString());
 
-        Locator candidate = candidate(name);
-        assertThat(candidate).hasCount(1);
-        assertThat(candidate.locator(".venue-visited")).isVisible();
+        Locator listed = listed(name);
+        assertThat(listed).hasCount(1);
+        assertThat(listed.locator(".venue-visited")).isVisible();
     }
 
     @Override
     public void assertNotVisited(String name) {
         page.navigate(baseUrl.resolve("venues").toString());
 
-        Locator candidate = candidate(name);
-        assertThat(candidate).hasCount(1);
-        assertThat(candidate.locator(".venue-visited")).not().isAttached();
+        Locator listed = listed(name);
+        assertThat(listed).hasCount(1);
+        assertThat(listed.locator(".venue-visited")).not().isAttached();
     }
 
     @Override

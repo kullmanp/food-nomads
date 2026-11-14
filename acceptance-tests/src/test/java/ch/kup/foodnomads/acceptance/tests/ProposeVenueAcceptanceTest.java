@@ -6,12 +6,12 @@ import org.junit.jupiter.api.Test;
 class ProposeVenueAcceptanceTest extends AcceptanceTest {
 
     @Test
-    void proposedVenueAppearsAmongTheCandidates() {
+    void proposedVenueIsListed() {
         members.logIn("member: founder");
 
         venues.propose("name: Sternen", "address: Spalenberg 1, Basel");
 
-        venues.assertCandidate("name: Sternen", "address: Spalenberg 1, Basel", "proposedBy: founder");
+        venues.assertListed("name: Sternen", "address: Spalenberg 1, Basel", "proposedBy: founder");
     }
 
     @Test
