@@ -45,6 +45,14 @@ final class ApiClient implements AutoCloseable {
                 .build());
     }
 
+    HttpResponse<String> put(String path, JsonNode body) {
+        return send(HttpRequest.newBuilder(baseUrl.resolve(path))
+                .header("Accept", "application/json")
+                .header("Content-Type", "application/json")
+                .PUT(HttpRequest.BodyPublishers.ofString(body.toString()))
+                .build());
+    }
+
     HttpResponse<String> delete(String path) {
         return send(HttpRequest.newBuilder(baseUrl.resolve(path))
                 .header("Accept", "application/json")

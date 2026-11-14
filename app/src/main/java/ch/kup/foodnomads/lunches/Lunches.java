@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
 
 /**
  * Planning and cancelling Lunches, recording the ones from before the app, putting up Candidate
- * Venues and talking Lunches over in their Lunch Comments. Which Venues are visited follows from
+ * Venues and voting on them, and talking Lunches over in their Lunch Comments. Which Venues are visited follows from
  * the Held Lunches.
  */
 @ApplicationScoped
@@ -39,6 +39,11 @@ public class Lunches {
     private static final Comparator<Venue> BY_NAME = Comparator.comparing(
                     (Venue v) -> v.name, Collator.getInstance(Locale.GERMAN))
             .thenComparing(v -> v.id);
+
+    /** Up minus down, highest first, then by name. */
+    private static final Comparator<ListedCandidate> CANDIDATE_ORDER = Comparator.comparingInt(
+                    (ListedCandidate c) -> c.down() - c.up())
+            .thenComparing(ListedCandidate::venue, BY_NAME);
 
     private final LunchRepository repository;
     private final Venues venues;
@@ -156,18 +161,67 @@ public class Lunches {
     public void removeCandidate(UUID lunchId, UUID venueId) {
         Lunch lunch = plannedForUpdate(lunchId);
         CandidateVenue candidate = candidateOf(lunch, venueId).orElseThrow(NotACandidateException::new);
+        // Its Votes go with it.
+        candidate.votes.forEach(repository::removeVote);
         lunch.candidates.remove(candidate);
         repository.removeCandidate(candidate);
     }
 
-    /** The Lunch's Candidate Venues by name, each marked visited or not. */
+    /**
+     * The Member votes {@code direction} on this Candidate Venue of the Planned Lunch. A Member has
+     * at most one Vote per Candidate Venue, so voting again replaces it. Fails with
+     * {@link LunchNotPlannedException} for a held or cancelled Lunch and with
+     * {@link NotACandidateException} if the Venue isn't up.
+     */
     @Transactional
-    public List<ListedCandidate> candidates(Lunch lunch) {
+    public Vote vote(Member member, UUID lunchId, UUID venueId, VoteDirection direction) {
+        Lunch lunch = plannedForUpdate(lunchId);
+        CandidateVenue candidate = candidateOf(lunch, venueId).orElseThrow(NotACandidateException::new);
+        Optional<Vote> existing = voteOf(candidate, member);
+        if (existing.isPresent()) {
+            existing.get().direction = direction;
+            return existing.get();
+        }
+        Vote vote = new Vote();
+        vote.id = UUID.randomUUID();
+        vote.candidate = candidate;
+        vote.member = member;
+        vote.direction = direction;
+        candidate.votes.add(vote);
+        repository.addVote(vote);
+        return vote;
+    }
+
+    /**
+     * Takes the Member's Vote off this Candidate Venue of the Planned Lunch. Without one, nothing
+     * changes. Fails with {@link LunchNotPlannedException} for a held or cancelled Lunch and with
+     * {@link NotACandidateException} if the Venue isn't up.
+     */
+    @Transactional
+    public void withdrawVote(Member member, UUID lunchId, UUID venueId) {
+        Lunch lunch = plannedForUpdate(lunchId);
+        CandidateVenue candidate = candidateOf(lunch, venueId).orElseThrow(NotACandidateException::new);
+        voteOf(candidate, member).ifPresent(vote -> {
+            candidate.votes.remove(vote);
+            repository.removeVote(vote);
+        });
+    }
+
+    /**
+     * The Lunch's Candidate Venues as this Member sees them: each marked visited or not, with its
+     * up and down Votes and the Member's own. Listed by up minus down, highest first, then by name.
+     */
+    @Transactional
+    public List<ListedCandidate> candidates(Lunch lunch, Member member) {
         Set<UUID> visited = visitedVenueIds();
         return lunch.candidates.stream()
-                .map(candidate -> candidate.venue)
-                .sorted(BY_NAME)
-                .map(venue -> new ListedCandidate(venue, visited.contains(venue.id)))
+                .map(candidate -> new ListedCandidate(
+                        candidate.venue,
+                        visited.contains(candidate.venue.id),
+                        count(candidate, VoteDirection.UP),
+                        count(candidate, VoteDirection.DOWN),
+                        voteOf(candidate, member).map(vote -> vote.direction).orElse(null)))
+                .sorted(CANDIDATE_ORDER)
                 .toList();
     }
 
@@ -189,6 +243,18 @@ public class Lunches {
             throw new LunchNotPlannedException();
         }
         return lunch;
+    }
+
+    private static Optional<Vote> voteOf(CandidateVenue candidate, Member member) {
+        return candidate.votes.stream()
+                .filter(vote -> vote.member.id.equals(member.id))
+                .findFirst();
+    }
+
+    private static int count(CandidateVenue candidate, VoteDirection direction) {
+        return (int) candidate.votes.stream()
+                .filter(vote -> vote.direction == direction)
+                .count();
     }
 
     private static Optional<CandidateVenue> candidateOf(Lunch lunch, UUID venueId) {

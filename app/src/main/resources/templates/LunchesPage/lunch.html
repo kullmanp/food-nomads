@@ -33,6 +33,37 @@
                 <button class="text-button remove-candidate" type="submit">{msg:lunch_candidate_remove}</button>
             </form>
             {/if}
+            <div class="candidate-votes">
+                {#if lunch.planned}
+                {#if candidate.myVote == 'up'}
+                <form method="post" action="/lunches/{lunch.id}/candidates/{candidate.venueId}/vote/withdraw">
+                    <button class="vote-button vote-up" type="submit" aria-pressed="true"
+                            aria-label="{msg:lunch_vote_up_withdraw(candidate.up)}"><span aria-hidden="true">&#9650;</span> <span class="candidate-up">{candidate.up}</span></button>
+                </form>
+                {#else}
+                <form method="post" action="/lunches/{lunch.id}/candidates/{candidate.venueId}/vote">
+                    <input type="hidden" name="direction" value="up">
+                    <button class="vote-button vote-up" type="submit" aria-pressed="false"
+                            aria-label="{msg:lunch_vote_up(candidate.up)}"><span aria-hidden="true">&#9650;</span> <span class="candidate-up">{candidate.up}</span></button>
+                </form>
+                {/if}
+                {#if candidate.myVote == 'down'}
+                <form method="post" action="/lunches/{lunch.id}/candidates/{candidate.venueId}/vote/withdraw">
+                    <button class="vote-button vote-down" type="submit" aria-pressed="true"
+                            aria-label="{msg:lunch_vote_down_withdraw(candidate.down)}"><span aria-hidden="true">&#9660;</span> <span class="candidate-down">{candidate.down}</span></button>
+                </form>
+                {#else}
+                <form method="post" action="/lunches/{lunch.id}/candidates/{candidate.venueId}/vote">
+                    <input type="hidden" name="direction" value="down">
+                    <button class="vote-button vote-down" type="submit" aria-pressed="false"
+                            aria-label="{msg:lunch_vote_down(candidate.down)}"><span aria-hidden="true">&#9660;</span> <span class="candidate-down">{candidate.down}</span></button>
+                </form>
+                {/if}
+                {#else}
+                <span class="vote-count{#if candidate.myVote == 'up'} mine{/if}" aria-label="{msg:lunch_votes_up(candidate.up)}"><span aria-hidden="true">&#9650;</span> <span class="candidate-up">{candidate.up}</span></span>
+                <span class="vote-count{#if candidate.myVote == 'down'} mine{/if}" aria-label="{msg:lunch_votes_down(candidate.down)}"><span aria-hidden="true">&#9660;</span> <span class="candidate-down">{candidate.down}</span></span>
+                {/if}
+            </div>
         </li>
         {/for}
     </ul>

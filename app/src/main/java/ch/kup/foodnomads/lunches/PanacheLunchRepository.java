@@ -9,7 +9,7 @@ import java.util.Optional;
 import java.util.UUID;
 import org.hibernate.exception.ConstraintViolationException;
 
-/** Keeps Lunches, their comments and their Candidate Venues in PostgreSQL. Callers run it inside a transaction. */
+/** Keeps Lunches, their comments, their Candidate Venues and their Votes in PostgreSQL. Callers run it inside a transaction. */
 @ApplicationScoped
 class PanacheLunchRepository implements LunchRepository {
 
@@ -44,11 +44,14 @@ class PanacheLunchRepository implements LunchRepository {
                                 + " where l.id = ?1",
                         id)
                 .singleResultOptional();
-        // A second query, so that comments and Candidate Venues don't multiply each other. It fills
-        // in the same Lunch, which this transaction already holds.
-        lunch.ifPresent(l -> Lunch.find(
-                        "from Lunch l left join fetch l.candidates c left join fetch c.venue where l.id = ?1", id)
-                .singleResult());
+        // More queries, so that comments, Candidate Venues and Votes don't multiply each other. They
+        // fill in the same Lunch and Candidate Venues, which this transaction already holds.
+        lunch.ifPresent(l -> {
+            Lunch.find("from Lunch l left join fetch l.candidates c left join fetch c.venue where l.id = ?1", id)
+                    .singleResult();
+            CandidateVenue.find("from CandidateVenue c left join fetch c.votes where c.lunch.id = ?1", id)
+                    .list();
+        });
         return lunch;
     }
 
@@ -81,5 +84,16 @@ class PanacheLunchRepository implements LunchRepository {
     @Override
     public void removeCandidate(CandidateVenue candidate) {
         candidate.delete();
+    }
+
+    @Override
+    public void addVote(Vote vote) {
+        vote.member = Member.getEntityManager().merge(vote.member);
+        vote.persist();
+    }
+
+    @Override
+    public void removeVote(Vote vote) {
+        vote.delete();
     }
 }

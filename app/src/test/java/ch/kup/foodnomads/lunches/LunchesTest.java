@@ -32,6 +32,7 @@ class LunchesTest {
 
     private final Member anna = member("Anna");
     private final Member ben = member("Ben");
+    private final Member cleo = member("Cleo");
 
     @Test
     void planningStoresAPlannedLunchOnThatDate() {
@@ -442,14 +443,14 @@ class LunchesTest {
         assertThat(candidate.venue).isSameAs(sternen);
         assertThat(lunch.candidates).containsExactly(candidate);
         assertThat(repository.candidates()).containsExactly(candidate);
-        assertThat(lunches.candidates(lunch)).containsExactly(new ListedCandidate(sternen, false));
+        assertThat(lunches.candidates(lunch, anna)).containsExactly(new ListedCandidate(sternen, false, 0, 0, null));
     }
 
     @Test
     void aNewPlannedLunchHasNoCandidateVenues() {
         venues.propose(anna, "Sternen", null);
 
-        assertThat(lunches.candidates(lunches.plan(TODAY))).isEmpty();
+        assertThat(lunches.candidates(lunches.plan(TODAY), anna)).isEmpty();
     }
 
     @Test
@@ -531,7 +532,7 @@ class LunchesTest {
 
         assertThat(lunch.candidates).containsExactly(kept);
         assertThat(repository.candidates()).containsExactly(kept);
-        assertThat(lunches.candidates(lunch)).containsExactly(new ListedCandidate(sternen, false));
+        assertThat(lunches.candidates(lunch, anna)).containsExactly(new ListedCandidate(sternen, false, 0, 0, null));
         assertThat(repository.locked()).containsExactly(lunch.id, lunch.id, lunch.id);
     }
 
@@ -570,7 +571,7 @@ class LunchesTest {
         assertThatExceptionOfType(LunchNotPlannedException.class)
                 .isThrownBy(() -> lunches.removeCandidate(lunch.id, sternen.id));
         assertThat(lunch.candidates).containsExactly(candidate);
-        assertThat(lunches.candidates(lunch)).containsExactly(new ListedCandidate(sternen, false));
+        assertThat(lunches.candidates(lunch, anna)).containsExactly(new ListedCandidate(sternen, false, 0, 0, null));
     }
 
     @Test
@@ -590,7 +591,7 @@ class LunchesTest {
 
         lunches.recordPast(TODAY.minusDays(60), sternen.id);
 
-        assertThat(lunches.candidates(lunch)).containsExactly(new ListedCandidate(sternen, true));
+        assertThat(lunches.candidates(lunch, anna)).containsExactly(new ListedCandidate(sternen, true, 0, 0, null));
     }
 
     @Test
@@ -602,7 +603,7 @@ class LunchesTest {
 
         lunches.removeCandidate(lunch.id, sternen.id);
 
-        assertThat(lunches.candidates(lunch)).isEmpty();
+        assertThat(lunches.candidates(lunch, anna)).isEmpty();
     }
 
     @Test
@@ -615,7 +616,7 @@ class LunchesTest {
         lunches.addCandidate(lunch.id, roessli.id);
         lunches.addCandidate(lunch.id, ankerLower.id);
 
-        assertThat(lunches.candidates(lunch))
+        assertThat(lunches.candidates(lunch, anna))
                 .extracting(ListedCandidate::venue)
                 .containsExactly(ankerLower, roessli, sternen);
     }
@@ -628,7 +629,7 @@ class LunchesTest {
         lunches.addCandidate(lunch.id, second.id);
         lunches.addCandidate(lunch.id, first.id);
 
-        assertThat(lunches.candidates(lunch))
+        assertThat(lunches.candidates(lunch, anna))
                 .extracting(ListedCandidate::venue)
                 .containsExactlyElementsOf(Stream.of(first, second)
                         .sorted(Comparator.comparing((Venue v) -> v.id))
@@ -654,6 +655,260 @@ class LunchesTest {
         Lunch cancelled = planAndCancel(TODAY);
 
         assertThat(lunches.addableVenues(cancelled)).isEmpty();
+    }
+
+    @Test
+    void votingUpCountsForTheCandidateVenue() {
+        Venue sternen = venues.propose(anna, "Sternen", null);
+        Lunch lunch = lunches.plan(TODAY.plusDays(7));
+        CandidateVenue candidate = lunches.addCandidate(lunch.id, sternen.id);
+
+        Vote vote = lunches.vote(anna, lunch.id, sternen.id, VoteDirection.UP);
+
+        assertThat(vote.id).isNotNull();
+        assertThat(vote.candidate).isSameAs(candidate);
+        assertThat(vote.member).isSameAs(anna);
+        assertThat(vote.direction).isEqualTo(VoteDirection.UP);
+        assertThat(candidate.votes).containsExactly(vote);
+        assertThat(repository.votes()).containsExactly(vote);
+        assertThat(lunches.candidates(lunch, anna))
+                .containsExactly(new ListedCandidate(sternen, false, 1, 0, VoteDirection.UP));
+    }
+
+    @Test
+    void votesOfAllMembersAreCountedButOnlyTheirOwnIsShownAsTheirs() {
+        Venue sternen = venues.propose(anna, "Sternen", null);
+        Venue kunsthalle = venues.propose(anna, "Kunsthalle", null);
+        Lunch lunch = lunches.plan(TODAY.plusDays(7));
+        lunches.addCandidate(lunch.id, sternen.id);
+        lunches.addCandidate(lunch.id, kunsthalle.id);
+        lunches.vote(anna, lunch.id, sternen.id, VoteDirection.UP);
+        lunches.vote(ben, lunch.id, sternen.id, VoteDirection.UP);
+        lunches.vote(anna, lunch.id, kunsthalle.id, VoteDirection.DOWN);
+
+        assertThat(lunches.candidates(lunch, ben))
+                .containsExactly(
+                        new ListedCandidate(sternen, false, 2, 0, VoteDirection.UP),
+                        new ListedCandidate(kunsthalle, false, 0, 1, null));
+    }
+
+    @Test
+    void votingAgainReplacesTheVote() {
+        Venue sternen = venues.propose(anna, "Sternen", null);
+        Lunch lunch = lunches.plan(TODAY.plusDays(7));
+        CandidateVenue candidate = lunches.addCandidate(lunch.id, sternen.id);
+        Vote first = lunches.vote(anna, lunch.id, sternen.id, VoteDirection.UP);
+
+        Vote again = lunches.vote(anna, lunch.id, sternen.id, VoteDirection.DOWN);
+
+        assertThat(again).isSameAs(first);
+        assertThat(again.direction).isEqualTo(VoteDirection.DOWN);
+        assertThat(candidate.votes).containsExactly(first);
+        assertThat(repository.votes()).containsExactly(first);
+        assertThat(lunches.candidates(lunch, anna))
+                .containsExactly(new ListedCandidate(sternen, false, 0, 1, VoteDirection.DOWN));
+    }
+
+    @Test
+    void aMemberIsKnownByTheirIdWhenVotingAgain() {
+        Venue sternen = venues.propose(anna, "Sternen", null);
+        Lunch lunch = lunches.plan(TODAY.plusDays(7));
+        lunches.addCandidate(lunch.id, sternen.id);
+        lunches.vote(anna, lunch.id, sternen.id, VoteDirection.UP);
+        Member annaAgain = new Member();
+        annaAgain.id = anna.id;
+        annaAgain.displayName = anna.displayName;
+
+        lunches.vote(annaAgain, lunch.id, sternen.id, VoteDirection.DOWN);
+
+        assertThat(repository.votes()).hasSize(1);
+        assertThat(lunches.candidates(lunch, annaAgain))
+                .containsExactly(new ListedCandidate(sternen, false, 0, 1, VoteDirection.DOWN));
+    }
+
+    @Test
+    void votingLocksThePlannedLunch() {
+        Venue sternen = venues.propose(anna, "Sternen", null);
+        Lunch lunch = lunches.plan(TODAY);
+        lunches.addCandidate(lunch.id, sternen.id);
+
+        lunches.vote(anna, lunch.id, sternen.id, VoteDirection.UP);
+        lunches.withdrawVote(anna, lunch.id, sternen.id);
+
+        assertThat(repository.locked()).containsExactly(lunch.id, lunch.id, lunch.id);
+    }
+
+    @Test
+    void onlyCandidateVenuesTakeVotes() {
+        Venue sternen = venues.propose(anna, "Sternen", null);
+        Venue kunsthalle = venues.propose(anna, "Kunsthalle", null);
+        Lunch lunch = lunches.plan(TODAY.plusDays(7));
+        lunches.addCandidate(lunch.id, sternen.id);
+
+        assertThatExceptionOfType(NotACandidateException.class)
+                .isThrownBy(() -> lunches.vote(anna, lunch.id, kunsthalle.id, VoteDirection.UP));
+        assertThat(repository.votes()).isEmpty();
+    }
+
+    @Test
+    void onlyThePlannedLunchTakesVotes() {
+        Venue sternen = venues.propose(anna, "Sternen", null);
+        Lunch lunch = lunches.plan(TODAY.plusDays(7));
+        lunches.addCandidate(lunch.id, sternen.id);
+        lunches.vote(anna, lunch.id, sternen.id, VoteDirection.UP);
+        lunches.cancel(lunch.id);
+
+        assertThatExceptionOfType(LunchNotPlannedException.class)
+                .isThrownBy(() -> lunches.vote(anna, lunch.id, sternen.id, VoteDirection.DOWN));
+        assertThatExceptionOfType(LunchNotPlannedException.class)
+                .isThrownBy(() -> lunches.vote(ben, lunch.id, sternen.id, VoteDirection.UP));
+        assertThatExceptionOfType(LunchNotPlannedException.class)
+                .isThrownBy(() -> lunches.withdrawVote(anna, lunch.id, sternen.id));
+        assertThat(lunches.candidates(lunch, anna))
+                .containsExactly(new ListedCandidate(sternen, false, 1, 0, VoteDirection.UP));
+    }
+
+    @Test
+    void anUnknownLunchTakesNoVotes() {
+        Venue sternen = venues.propose(anna, "Sternen", null);
+        UUID unknown = UUID.randomUUID();
+
+        assertThatExceptionOfType(LunchNotFoundException.class)
+                .isThrownBy(() -> lunches.vote(anna, unknown, sternen.id, VoteDirection.UP));
+        assertThatExceptionOfType(LunchNotFoundException.class)
+                .isThrownBy(() -> lunches.withdrawVote(anna, unknown, sternen.id));
+    }
+
+    @Test
+    void withdrawingTakesTheVoteAway() {
+        Venue sternen = venues.propose(anna, "Sternen", null);
+        Lunch lunch = lunches.plan(TODAY.plusDays(7));
+        CandidateVenue candidate = lunches.addCandidate(lunch.id, sternen.id);
+        lunches.vote(anna, lunch.id, sternen.id, VoteDirection.UP);
+        Vote kept = lunches.vote(ben, lunch.id, sternen.id, VoteDirection.UP);
+
+        lunches.withdrawVote(anna, lunch.id, sternen.id);
+
+        assertThat(candidate.votes).containsExactly(kept);
+        assertThat(repository.votes()).containsExactly(kept);
+        assertThat(lunches.candidates(lunch, anna)).containsExactly(new ListedCandidate(sternen, false, 1, 0, null));
+    }
+
+    @Test
+    void withdrawingWithoutAVoteChangesNothing() {
+        Venue sternen = venues.propose(anna, "Sternen", null);
+        Lunch lunch = lunches.plan(TODAY.plusDays(7));
+        lunches.addCandidate(lunch.id, sternen.id);
+        Vote kept = lunches.vote(ben, lunch.id, sternen.id, VoteDirection.DOWN);
+
+        lunches.withdrawVote(anna, lunch.id, sternen.id);
+
+        assertThat(repository.votes()).containsExactly(kept);
+    }
+
+    @Test
+    void aVenueThatIsNoCandidateVenueHasNoVoteToWithdraw() {
+        Venue sternen = venues.propose(anna, "Sternen", null);
+        Lunch lunch = lunches.plan(TODAY.plusDays(7));
+
+        assertThatExceptionOfType(NotACandidateException.class)
+                .isThrownBy(() -> lunches.withdrawVote(anna, lunch.id, sternen.id));
+    }
+
+    @Test
+    void removingACandidateVenueRemovesItsVotes() {
+        Venue sternen = venues.propose(anna, "Sternen", null);
+        Venue kunsthalle = venues.propose(anna, "Kunsthalle", null);
+        Lunch lunch = lunches.plan(TODAY.plusDays(7));
+        lunches.addCandidate(lunch.id, sternen.id);
+        lunches.addCandidate(lunch.id, kunsthalle.id);
+        lunches.vote(anna, lunch.id, sternen.id, VoteDirection.UP);
+        lunches.vote(ben, lunch.id, sternen.id, VoteDirection.DOWN);
+        Vote kept = lunches.vote(anna, lunch.id, kunsthalle.id, VoteDirection.UP);
+
+        lunches.removeCandidate(lunch.id, sternen.id);
+
+        assertThat(repository.votes()).containsExactly(kept);
+    }
+
+    @Test
+    void aCandidateVenuePutUpAgainStartsWithoutVotes() {
+        Venue sternen = venues.propose(anna, "Sternen", null);
+        Lunch lunch = lunches.plan(TODAY.plusDays(7));
+        lunches.addCandidate(lunch.id, sternen.id);
+        lunches.vote(anna, lunch.id, sternen.id, VoteDirection.UP);
+        lunches.removeCandidate(lunch.id, sternen.id);
+
+        lunches.addCandidate(lunch.id, sternen.id);
+
+        assertThat(lunches.candidates(lunch, anna)).containsExactly(new ListedCandidate(sternen, false, 0, 0, null));
+    }
+
+    @Test
+    void listsCandidateVenuesByUpMinusDownHighestFirst() {
+        Venue anker = venues.propose(anna, "Anker", null);
+        Venue kunsthalle = venues.propose(anna, "Kunsthalle", null);
+        Venue roessli = venues.propose(anna, "Rössli", null);
+        Venue sternen = venues.propose(anna, "Sternen", null);
+        Lunch lunch = lunches.plan(TODAY);
+        Stream.of(anker, kunsthalle, roessli, sternen).forEach(v -> lunches.addCandidate(lunch.id, v.id));
+        // Kunsthalle 2 - 1 and Sternen 1 - 0 tie at 1, so by name. Then Rössli at 0, Anker at -1.
+        lunches.vote(anna, lunch.id, anker.id, VoteDirection.DOWN);
+        lunches.vote(anna, lunch.id, kunsthalle.id, VoteDirection.UP);
+        lunches.vote(ben, lunch.id, kunsthalle.id, VoteDirection.UP);
+        lunches.vote(cleo, lunch.id, kunsthalle.id, VoteDirection.DOWN);
+        lunches.vote(ben, lunch.id, sternen.id, VoteDirection.UP);
+
+        assertThat(lunches.candidates(lunch, anna))
+                .extracting(ListedCandidate::venue)
+                .containsExactly(kunsthalle, sternen, roessli, anker);
+    }
+
+    @Test
+    void listsCandidateVenuesWithTheSameBalanceByName() {
+        Venue sternen = venues.propose(anna, "Sternen", null);
+        Venue anker = venues.propose(anna, "Anker", null);
+        Lunch lunch = lunches.plan(TODAY);
+        lunches.addCandidate(lunch.id, sternen.id);
+        lunches.addCandidate(lunch.id, anker.id);
+        // Both 1 - 1 = 0, though Sternen has more up Votes.
+        lunches.vote(anna, lunch.id, sternen.id, VoteDirection.UP);
+        lunches.vote(ben, lunch.id, sternen.id, VoteDirection.DOWN);
+
+        assertThat(lunches.candidates(lunch, anna))
+                .extracting(ListedCandidate::venue)
+                .containsExactly(anker, sternen);
+    }
+
+    @Test
+    void votesStayVisibleOnceTheLunchIsCancelled() {
+        Venue sternen = venues.propose(anna, "Sternen", null);
+        Lunch lunch = lunches.plan(TODAY.plusDays(7));
+        lunches.addCandidate(lunch.id, sternen.id);
+        lunches.vote(anna, lunch.id, sternen.id, VoteDirection.DOWN);
+
+        lunches.cancel(lunch.id);
+
+        assertThat(lunches.candidates(lunch, anna))
+                .containsExactly(new ListedCandidate(sternen, false, 0, 1, VoteDirection.DOWN));
+    }
+
+    @Test
+    void aVoteForOneCandidateVenueIsNotAVoteForAnother() {
+        Venue sternen = venues.propose(anna, "Sternen", null);
+        Venue kunsthalle = venues.propose(anna, "Kunsthalle", null);
+        Lunch lunch = lunches.plan(TODAY.plusDays(7));
+        lunches.addCandidate(lunch.id, sternen.id);
+        lunches.addCandidate(lunch.id, kunsthalle.id);
+        lunches.vote(anna, lunch.id, sternen.id, VoteDirection.UP);
+
+        lunches.vote(anna, lunch.id, kunsthalle.id, VoteDirection.DOWN);
+        lunches.withdrawVote(anna, lunch.id, kunsthalle.id);
+
+        assertThat(lunches.candidates(lunch, anna))
+                .containsExactly(
+                        new ListedCandidate(sternen, false, 1, 0, VoteDirection.UP),
+                        new ListedCandidate(kunsthalle, false, 0, 0, null));
     }
 
     private Lunch planAndCancel(LocalDate date) {

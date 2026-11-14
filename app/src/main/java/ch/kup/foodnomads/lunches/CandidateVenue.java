@@ -7,12 +7,15 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 /**
- * A Venue a Member put up for a Planned Lunch. It belongs to the Lunch and stays with it, also
- * once the Lunch is held or cancelled.
+ * A Venue a Member put up for a Planned Lunch, with the Members' Votes on it. It belongs to the
+ * Lunch and stays with it, also once the Lunch is held or cancelled.
  */
 @Entity
 @Table(name = "candidate_venue")
@@ -28,4 +31,7 @@ public class CandidateVenue extends PanacheEntityBase {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "venue_id")
     public Venue venue;
+
+    @OneToMany(mappedBy = "candidate")
+    public List<Vote> votes = new ArrayList<>();
 }

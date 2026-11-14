@@ -11,6 +11,7 @@ class InMemoryLunchRepository implements LunchRepository {
     private final List<Lunch> lunches = new ArrayList<>();
     private final List<LunchComment> comments = new ArrayList<>();
     private final List<CandidateVenue> candidates = new ArrayList<>();
+    private final List<Vote> votes = new ArrayList<>();
     private final List<UUID> locked = new ArrayList<>();
 
     @Override
@@ -54,12 +55,26 @@ class InMemoryLunchRepository implements LunchRepository {
         candidates.remove(candidate);
     }
 
+    @Override
+    public void addVote(Vote vote) {
+        votes.add(vote);
+    }
+
+    @Override
+    public void removeVote(Vote vote) {
+        votes.remove(vote);
+    }
+
     List<LunchComment> comments() {
         return List.copyOf(comments);
     }
 
     List<CandidateVenue> candidates() {
         return List.copyOf(candidates);
+    }
+
+    List<Vote> votes() {
+        return List.copyOf(votes);
     }
 
     /** The ids {@link #findForUpdate} was asked for, in order. */

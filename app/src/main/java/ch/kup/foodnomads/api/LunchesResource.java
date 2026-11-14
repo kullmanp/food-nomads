@@ -14,6 +14,7 @@ import ch.kup.foodnomads.lunches.LunchNotPlannedException;
 import ch.kup.foodnomads.lunches.Lunches;
 import ch.kup.foodnomads.lunches.NotACandidateException;
 import ch.kup.foodnomads.lunches.VenueVisitedException;
+import ch.kup.foodnomads.lunches.VoteDirection;
 import ch.kup.foodnomads.members.Member;
 import ch.kup.foodnomads.members.Membership;
 import ch.kup.foodnomads.venues.Venue;
@@ -26,6 +27,7 @@ import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotAuthorizedException;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
@@ -38,7 +40,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
-/** Planning and cancelling Lunches, recording past ones, their Candidate Venues and their Lunch Comments. */
+/** Planning and cancelling Lunches, recording past ones, their Candidate Venues and Votes, and their Lunch Comments. */
 @Path("/api/lunches")
 @Produces(MediaType.APPLICATION_JSON)
 public class LunchesResource {
@@ -75,10 +77,20 @@ public class LunchesResource {
         }
     }
 
-    /** A Candidate Venue. {@code visited} once a Lunch has been held there after it was put up. */
-    public record CandidateJson(VenueJson venue, boolean visited) {
+    /**
+     * A Candidate Venue. {@code visited} once a Lunch has been held there after it was put up.
+     * {@code myVote} is the caller's own Vote, {@code up}, {@code down} or null.
+     */
+    public record CandidateJson(VenueJson venue, boolean visited, int up, int down, String myVote) {
         static CandidateJson of(ListedCandidate candidate) {
-            return new CandidateJson(VenueJson.of(candidate.venue()), candidate.visited());
+            return new CandidateJson(
+                    VenueJson.of(candidate.venue()),
+                    candidate.visited(),
+                    candidate.up(),
+                    candidate.down(),
+                    candidate.myVote() == null
+                            ? null
+                            : candidate.myVote().name().toLowerCase(Locale.ROOT));
         }
     }
 
@@ -95,6 +107,9 @@ public class LunchesResource {
     public record CommentRequest(String text) {}
 
     public record CandidateRequest(UUID venueId) {}
+
+    /** {@code direction} is {@code up} or {@code down}. */
+    public record VoteRequest(String direction) {}
 
     @Inject
     Lunches lunches;
@@ -121,9 +136,10 @@ public class LunchesResource {
     @GET
     @Path("{id}")
     public LunchDetailJson lunch(@PathParam("id") UUID id) {
+        Member caller = currentMember();
         try {
             Lunch lunch = lunches.lunch(id);
-            return LunchDetailJson.of(lunch, lunches.candidates(lunch));
+            return LunchDetailJson.of(lunch, lunches.candidates(lunch, caller));
         } catch (LunchNotFoundException e) {
             throw new NotFoundException(e);
         }
@@ -215,7 +231,7 @@ public class LunchesResource {
         try {
             CandidateVenue candidate = lunches.addCandidate(id, request.venueId());
             return Response.status(Response.Status.CREATED)
-                    .entity(new CandidateJson(VenueJson.of(candidate.venue), false))
+                    .entity(new CandidateJson(VenueJson.of(candidate.venue), false, 0, 0, null))
                     .build();
         } catch (LunchNotFoundException | VenueNotFoundException e) {
             throw new NotFoundException(e);
@@ -242,6 +258,54 @@ public class LunchesResource {
         } catch (NotACandidateException e) {
             return error(Response.Status.CONFLICT, "not-a-candidate");
         }
+    }
+
+    @PUT
+    @Path("{id}/candidates/{venueId}/vote")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response vote(@PathParam("id") UUID id, @PathParam("venueId") UUID venueId, VoteRequest request) {
+        Member voter = currentMember();
+        VoteDirection direction = request == null ? null : directionOf(request.direction());
+        if (direction == null) {
+            return error(Response.Status.BAD_REQUEST, "direction-required");
+        }
+        try {
+            lunches.vote(voter, id, venueId, direction);
+            return Response.noContent().build();
+        } catch (LunchNotFoundException e) {
+            throw new NotFoundException(e);
+        } catch (LunchNotPlannedException e) {
+            return error(Response.Status.CONFLICT, "lunch-not-planned");
+        } catch (NotACandidateException e) {
+            return error(Response.Status.CONFLICT, "not-a-candidate");
+        }
+    }
+
+    @DELETE
+    @Path("{id}/candidates/{venueId}/vote")
+    public Response withdrawVote(@PathParam("id") UUID id, @PathParam("venueId") UUID venueId) {
+        Member voter = currentMember();
+        try {
+            lunches.withdrawVote(voter, id, venueId);
+            return Response.noContent().build();
+        } catch (LunchNotFoundException e) {
+            throw new NotFoundException(e);
+        } catch (LunchNotPlannedException e) {
+            return error(Response.Status.CONFLICT, "lunch-not-planned");
+        } catch (NotACandidateException e) {
+            return error(Response.Status.CONFLICT, "not-a-candidate");
+        }
+    }
+
+    /** {@code up} or {@code down} as a direction, or null for anything else. */
+    private static VoteDirection directionOf(String direction) {
+        if ("up".equals(direction)) {
+            return VoteDirection.UP;
+        }
+        if ("down".equals(direction)) {
+            return VoteDirection.DOWN;
+        }
+        return null;
     }
 
     private Member currentMember() {

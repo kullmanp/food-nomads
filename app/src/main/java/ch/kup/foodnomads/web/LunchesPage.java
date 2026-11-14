@@ -13,6 +13,7 @@ import ch.kup.foodnomads.lunches.LunchNotPlannedException;
 import ch.kup.foodnomads.lunches.Lunches;
 import ch.kup.foodnomads.lunches.NotACandidateException;
 import ch.kup.foodnomads.lunches.VenueVisitedException;
+import ch.kup.foodnomads.lunches.VoteDirection;
 import ch.kup.foodnomads.members.Member;
 import ch.kup.foodnomads.members.Membership;
 import ch.kup.foodnomads.venues.Venue;
@@ -42,7 +43,7 @@ import java.util.UUID;
 
 /**
  * The Lunches: planning one when none is planned, recording one from before the app, the list,
- * and a Lunch's own page with its Candidate Venues and its chat. The forms are ordinary form posts that come back to a
+ * and a Lunch's own page with its Candidate Venues, their Votes and its chat. The forms are ordinary form posts that come back to a
  * page, so a reload doesn't post again.
  */
 @Path("/lunches")
@@ -73,10 +74,19 @@ public class LunchesPage {
         }
     }
 
-    /** A Candidate Venue, marked visited once a Lunch has been held there. */
-    public record CandidateRow(String venueId, String name, boolean visited) {
+    /**
+     * A Candidate Venue, marked visited once a Lunch has been held there, with its up and down
+     * Votes. {@code myVote} is the Member's own, {@code up}, {@code down} or empty for none.
+     */
+    public record CandidateRow(String venueId, String name, boolean visited, int up, int down, String myVote) {
         static CandidateRow of(ListedCandidate candidate) {
-            return new CandidateRow(candidate.venue().id.toString(), candidate.venue().name, candidate.visited());
+            return new CandidateRow(
+                    candidate.venue().id.toString(),
+                    candidate.venue().name,
+                    candidate.visited(),
+                    candidate.up(),
+                    candidate.down(),
+                    candidate.myVote() == null ? "" : candidate.myVote().name().toLowerCase(Locale.ROOT));
         }
     }
 
@@ -291,6 +301,41 @@ public class LunchesPage {
         return Response.seeOther(lunchPath(id)).build();
     }
 
+    /** Votes {@code up} or {@code down}; anything else just comes back to the page. */
+    @POST
+    @Path("{id}/candidates/{venueId}/vote")
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    public Response vote(
+            @PathParam("id") UUID id, @PathParam("venueId") UUID venueId, @FormParam("direction") String direction) {
+        Member voter = currentMember();
+        try {
+            if ("up".equals(direction)) {
+                lunches.vote(voter, id, venueId, VoteDirection.UP);
+            } else if ("down".equals(direction)) {
+                lunches.vote(voter, id, venueId, VoteDirection.DOWN);
+            }
+        } catch (LunchNotFoundException e) {
+            throw new NotFoundException(e);
+        } catch (LunchNotPlannedException | NotACandidateException e) {
+            // Someone else was quicker. The page shows how things stand.
+        }
+        return Response.seeOther(lunchPath(id)).build();
+    }
+
+    @POST
+    @Path("{id}/candidates/{venueId}/vote/withdraw")
+    public Response withdrawVote(@PathParam("id") UUID id, @PathParam("venueId") UUID venueId) {
+        Member voter = currentMember();
+        try {
+            lunches.withdrawVote(voter, id, venueId);
+        } catch (LunchNotFoundException e) {
+            throw new NotFoundException(e);
+        } catch (LunchNotPlannedException | NotACandidateException e) {
+            // Someone else was quicker. The page shows how things stand.
+        }
+        return Response.seeOther(lunchPath(id)).build();
+    }
+
     private Response candidateRefused(int status, UUID id, String venueId, String error) {
         return Response.status(status)
                 .entity(lunchPage(id, new CandidateDraft(venueId, error), CommentDraft.EMPTY))
@@ -317,6 +362,7 @@ public class LunchesPage {
     }
 
     private TemplateInstance lunchPage(UUID id, CandidateDraft candidateDraft, CommentDraft draft) {
+        Member viewer = currentMember();
         Lunch lunch;
         try {
             lunch = lunches.lunch(id);
@@ -325,7 +371,7 @@ public class LunchesPage {
         }
         return Templates.lunch(
                 LunchRow.of(lunch),
-                lunches.candidates(lunch).stream().map(CandidateRow::of).toList(),
+                lunches.candidates(lunch, viewer).stream().map(CandidateRow::of).toList(),
                 lunches.addableVenues(lunch).stream().map(VenueOption::of).toList(),
                 candidateDraft,
                 lunch.chat().stream().map(Comment::of).toList(),

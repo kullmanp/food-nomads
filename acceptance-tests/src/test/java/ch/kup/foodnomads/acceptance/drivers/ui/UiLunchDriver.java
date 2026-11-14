@@ -212,19 +212,40 @@ class UiLunchDriver implements LunchDriver {
         }
     }
 
+    /** Presses the button for this direction, unless it shows as the Member's Vote already. */
     @Override
     public void vote(String lunchId, String venue, String direction) {
-        throw new UnsupportedOperationException("Not implemented yet");
+        page.navigate(lunchPage(lunchId));
+        Locator button = candidate(venue).locator(".vote-" + direction);
+        if (!"true".equals(button.getAttribute("aria-pressed"))) {
+            button.click();
+        }
+
+        assertThat(page.locator("main#lunch")).isVisible();
+        assertThat(candidate(venue).locator(".vote-" + direction)).hasAttribute("aria-pressed", "true");
+        assertThat(candidate(venue).locator(".vote-button[aria-pressed=true]")).hasCount(1);
     }
 
+    /** Presses the Member's own Vote again, which withdraws it. */
     @Override
     public void withdrawVote(String lunchId, String venue) {
-        throw new UnsupportedOperationException("Not implemented yet");
+        page.navigate(lunchPage(lunchId));
+        Locator mine = candidate(venue).locator(".vote-button[aria-pressed=true]");
+        assertThat(mine).hasCount(1);
+        mine.click();
+
+        assertThat(page.locator("main#lunch")).isVisible();
+        assertThat(candidate(venue).locator(".vote-button[aria-pressed=true]")).hasCount(0);
     }
 
     @Override
     public void assertVotes(String lunchId, String venue, int up, int down) {
-        throw new UnsupportedOperationException("Not implemented yet");
+        page.navigate(lunchPage(lunchId));
+
+        Locator candidate = candidate(venue);
+        assertThat(candidate).hasCount(1);
+        assertThat(candidate.locator(".candidate-up")).hasText(String.valueOf(up));
+        assertThat(candidate.locator(".candidate-down")).hasText(String.valueOf(down));
     }
 
     @Override

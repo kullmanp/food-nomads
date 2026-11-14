@@ -176,17 +176,30 @@ class ApiLunchDriver implements LunchDriver {
 
     @Override
     public void vote(String lunchId, String venue, String direction) {
-        throw new UnsupportedOperationException("Not implemented yet");
+        HttpResponse<String> response =
+                api.put(votePath(lunchId, venue), ApiClient.newObject().put("direction", direction));
+
+        assertEquals(204, response.statusCode(), "PUT /api/lunches/{id}/candidates/{venueId}/vote: " + response.body());
+        JsonNode candidate = candidate(lunchId, venue);
+        assertEquals(direction, candidate.path("myVote").asText(), "myVote in " + candidate);
     }
 
     @Override
     public void withdrawVote(String lunchId, String venue) {
-        throw new UnsupportedOperationException("Not implemented yet");
+        HttpResponse<String> response = api.delete(votePath(lunchId, venue));
+
+        assertEquals(
+                204, response.statusCode(), "DELETE /api/lunches/{id}/candidates/{venueId}/vote: " + response.body());
+        JsonNode candidate = candidate(lunchId, venue);
+        assertTrue(candidate.has("myVote") && candidate.path("myVote").isNull(), "myVote in " + candidate);
     }
 
     @Override
     public void assertVotes(String lunchId, String venue, int up, int down) {
-        throw new UnsupportedOperationException("Not implemented yet");
+        JsonNode candidate = candidate(lunchId, venue);
+
+        assertEquals(up, candidate.path("up").asInt(-1), "up in " + candidate);
+        assertEquals(down, candidate.path("down").asInt(-1), "down in " + candidate);
     }
 
     @Override
@@ -204,6 +217,20 @@ class ApiLunchDriver implements LunchDriver {
                 .filter(lunch -> lunch.path("id").asText().equals(lunchId))
                 .findFirst()
                 .orElseThrow(() -> new AssertionError("Lunch " + lunchId + " is not listed"));
+    }
+
+    /** The Candidate Venue with this name, as the Lunch's detail lists it to the logged-in Member. */
+    private JsonNode candidate(String lunchId, String venue) {
+        JsonNode candidates = lunch(lunchId).path("candidates");
+        return StreamSupport.stream(candidates.spliterator(), false)
+                .filter(candidate ->
+                        candidate.path("venue").path("name").asText().equals(venue))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("No Candidate Venue '" + venue + "' in " + candidates));
+    }
+
+    private String votePath(String lunchId, String venue) {
+        return candidatesPath(lunchId) + "/" + venueId(venue) + "/vote";
     }
 
     /** The id of the Venue with this name, from {@code GET /api/venues}. */

@@ -215,6 +215,24 @@ public interface Messages {
     String lunch_candidate_remove();
 
     @Message
+    String lunch_vote_up(int count);
+
+    @Message
+    String lunch_vote_down(int count);
+
+    @Message
+    String lunch_vote_up_withdraw(int count);
+
+    @Message
+    String lunch_vote_down_withdraw(int count);
+
+    @Message
+    String lunch_votes_up(int count);
+
+    @Message
+    String lunch_votes_down(int count);
+
+    @Message
     String lunch_candidate_add_label();
 
     @Message

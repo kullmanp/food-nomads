@@ -238,6 +238,20 @@ main > .poster {
 .candidate-venue.visited .candidate-name { text-decoration: line-through; text-decoration-thickness: 3px; }
 .candidate-visited { font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; }
 .candidate-venue form { margin: 0 0 0 auto; }
+.candidate-votes { display: flex; gap: 0.5rem; width: 100%; }
+.candidate-votes form { margin: 0; }
+.vote-button, .vote-count {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    min-width: 4.5rem;
+    min-height: 2.75rem;
+    padding: 0 0.75rem;
+    border: 2px solid var(--ink);
+    background: var(--paper);
+    font-weight: 800;
+}
+.vote-button[aria-pressed=true], .vote-count.mine { background: var(--ink); color: var(--paper); }
 #lunch-comments { margin: 0 0 1.25rem; padding: 0; border-top: 2px solid var(--ink); list-style: none; }
 .lunch-comment { padding: 0.625rem var(--gutter); border-bottom: 1px solid var(--ink); }
 .lunch-comment p { margin: 0; }
