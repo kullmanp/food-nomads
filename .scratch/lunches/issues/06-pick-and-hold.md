@@ -1,6 +1,6 @@
 # 06 Pick a Venue and hold the Lunch
 
-Status: ready-for-agent
+Status: claimed
 Blocked by: 03
 Spec: [../spec.md](../spec.md)
 

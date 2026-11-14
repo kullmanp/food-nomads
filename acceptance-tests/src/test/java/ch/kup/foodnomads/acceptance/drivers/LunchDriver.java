@@ -64,6 +64,12 @@ public interface LunchDriver {
     void removeCandidate(String lunchId, String venue);
 
     /**
+     * Fails unless removing the Candidate Venue with this name from the Lunch with this id is
+     * refused because it is the Lunch's Venue, and it stays.
+     */
+    void assertRemoveCandidateRejectedAsPicked(String lunchId, String venue);
+
+    /**
      * Fails unless the Lunch with this id lists exactly the Candidate Venues with these names, and
      * marks exactly those named in {@code visited} as visited.
      */
@@ -98,6 +104,18 @@ public interface LunchDriver {
 
     /** Fails unless moving the Lunch with this id to this date is refused because the date is before today. */
     void assertMoveRejectedAsInThePast(String lunchId, LocalDate date);
+
+    /** Picks the Candidate Venue with this name as the Lunch's Venue, and fails unless it was accepted. */
+    void pick(String lunchId, String venue);
+
+    /** Marks the Lunch with this id as held, as the logged-in Member, and fails unless it was accepted. */
+    void hold(String lunchId);
+
+    /** Fails unless marking the Lunch with this id as held is refused because its date is still ahead. */
+    void assertHoldRejectedAsNotDue(String lunchId);
+
+    /** Fails unless marking the Lunch with this id as held is refused because it has no Venue. */
+    void assertHoldRejectedAsNoVenue(String lunchId);
 
     /**
      * Fails unless this driver, with no Member logged in, is kept away from the Lunches: the UI

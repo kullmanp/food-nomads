@@ -156,10 +156,22 @@ public class LunchesDsl {
         }
     }
 
-    /** Removes the Candidate Venue {@code venue} from {@code lunch}, as the logged-in Member. */
+    /**
+     * Removes the Candidate Venue {@code venue} from {@code lunch}, as the logged-in Member. With
+     * {@code expect: candidatePicked}, fails unless it is refused because it is the Lunch's Venue.
+     */
     public void removeCandidate(String... args) {
-        Params params = Params.parse(args, Params.required("lunch"), Params.required("venue"));
-        driver.removeCandidate(idOf(params.value("lunch")), venueAliases.realName(params.value("venue")));
+        Params params = Params.parse(
+                args, Params.required("lunch"), Params.required("venue"), Params.optional("expect", "success"));
+        String id = idOf(params.value("lunch"));
+        String venue = venueAliases.realName(params.value("venue"));
+        switch (params.value("expect")) {
+            case "success" -> driver.removeCandidate(id, venue);
+            case "candidatePicked" -> driver.assertRemoveCandidateRejectedAsPicked(id, venue);
+            default ->
+                throw new IllegalArgumentException(
+                        "Unknown expect '" + params.value("expect") + "', expected success or candidatePicked");
+        }
     }
 
     /**
@@ -254,6 +266,30 @@ public class LunchesDsl {
             default ->
                 throw new IllegalArgumentException(
                         "Unknown expect '" + params.value("expect") + "', expected success or dateInPast");
+        }
+    }
+
+    /** Picks the Candidate Venue {@code venue} as the Venue of {@code lunch}, as the logged-in Member. */
+    public void pick(String... args) {
+        Params params = Params.parse(args, Params.required("lunch"), Params.required("venue"));
+        driver.pick(idOf(params.value("lunch")), venueAliases.realName(params.value("venue")));
+    }
+
+    /**
+     * Marks {@code lunch} as held, as the logged-in Member. With {@code expect: notDue} or
+     * {@code expect: noVenue}, fails unless it is refused because its date is still ahead or
+     * because it has no Venue.
+     */
+    public void hold(String... args) {
+        Params params = Params.parse(args, Params.required("lunch"), Params.optional("expect", "success"));
+        String id = idOf(params.value("lunch"));
+        switch (params.value("expect")) {
+            case "success" -> driver.hold(id);
+            case "notDue" -> driver.assertHoldRejectedAsNotDue(id);
+            case "noVenue" -> driver.assertHoldRejectedAsNoVenue(id);
+            default ->
+                throw new IllegalArgumentException(
+                        "Unknown expect '" + params.value("expect") + "', expected success, notDue or noVenue");
         }
     }
 
