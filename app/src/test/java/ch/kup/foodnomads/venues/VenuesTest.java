@@ -1,6 +1,7 @@
 package ch.kup.foodnomads.venues;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
 
 import ch.kup.foodnomads.members.Member;
@@ -54,6 +55,23 @@ class VenuesTest {
         Venue venue = venues.propose(anna, "Sternen", null);
 
         assertThat(venues.candidates()).containsExactly(venue);
+    }
+
+    @Test
+    void locksAVenueByItsId() {
+        venues.propose(anna, "Rössli", null);
+        Venue sternen = venues.propose(anna, "Sternen", null);
+
+        assertThat(venues.lock(sternen.id)).isSameAs(sternen);
+        assertThat(repository.locked()).containsExactly(sternen.id);
+    }
+
+    @Test
+    void anUnknownVenueCannotBeLocked() {
+        venues.propose(anna, "Sternen", null);
+        UUID unknown = UUID.randomUUID();
+
+        assertThatExceptionOfType(VenueNotFoundException.class).isThrownBy(() -> venues.lock(unknown));
     }
 
     private static Member member(String displayName) {

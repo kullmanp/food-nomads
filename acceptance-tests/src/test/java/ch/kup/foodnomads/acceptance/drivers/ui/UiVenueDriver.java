@@ -66,12 +66,20 @@ class UiVenueDriver implements VenueDriver {
 
     @Override
     public void assertVisited(String name) {
-        throw new UnsupportedOperationException("Not implemented yet: Visited Venues are marked on /venues");
+        page.navigate(baseUrl.resolve("venues").toString());
+
+        Locator candidate = candidate(name);
+        assertThat(candidate).hasCount(1);
+        assertThat(candidate.locator(".venue-visited")).isVisible();
     }
 
     @Override
     public void assertNotVisited(String name) {
-        throw new UnsupportedOperationException("Not implemented yet: Visited Venues are marked on /venues");
+        page.navigate(baseUrl.resolve("venues").toString());
+
+        Locator candidate = candidate(name);
+        assertThat(candidate).hasCount(1);
+        assertThat(candidate.locator(".venue-visited")).not().isAttached();
     }
 
     @Override

@@ -89,6 +89,9 @@ public interface Messages {
     String venues_proposed_by();
 
     @Message
+    String venues_visited();
+
+    @Message
     String invites_title();
 
     @Message
@@ -155,10 +158,37 @@ public interface Messages {
     String lunches_none();
 
     @Message
+    String lunches_record_title();
+
+    @Message
+    String lunches_record_venue();
+
+    @Message
+    String lunches_record_choose_venue();
+
+    @Message
+    String lunches_record();
+
+    @Message
+    String lunches_record_date_not_past();
+
+    @Message
+    String lunches_record_venue_required();
+
+    @Message
+    String lunches_record_venue_visited();
+
+    @Message
+    String lunches_record_no_venues();
+
+    @Message
     String lunch_title();
 
     @Message
     String lunch_state_planned();
+
+    @Message
+    String lunch_state_held();
 
     @Message
     String lunch_state_cancelled();

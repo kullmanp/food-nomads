@@ -6,6 +6,7 @@ import ch.kup.foodnomads.acceptance.drivers.LunchDriver;
 import com.microsoft.playwright.Dialog;
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
+import com.microsoft.playwright.options.SelectOption;
 import java.net.URI;
 import java.time.LocalDate;
 import java.util.regex.Pattern;
@@ -26,13 +27,7 @@ class UiLunchDriver implements LunchDriver {
     public String plan(LocalDate date) {
         submitPlan(date);
 
-        page.waitForURL(LUNCH_PAGE);
-        assertThat(page.locator("main#lunch")).isVisible();
-        var matcher = LUNCH_PAGE.matcher(page.url());
-        if (!matcher.matches()) {
-            throw new AssertionError("Not on a Lunch page: " + page.url());
-        }
-        return matcher.group(1);
+        return lunchIdFromPage();
     }
 
     @Override
@@ -129,22 +124,44 @@ class UiLunchDriver implements LunchDriver {
 
     @Override
     public String recordPast(LocalDate date, String venue) {
-        throw new UnsupportedOperationException("Not implemented yet: records a past Lunch on /lunches");
+        submitRecordPast(date, venue);
+
+        return lunchIdFromPage();
     }
 
+    /** The form only offers unvisited Venues, so a Visited Venue can't be chosen at all. */
     @Override
     public void assertRecordPastRejectedAsVenueVisited(LocalDate date, String venue) {
-        throw new UnsupportedOperationException("Not implemented yet: a Visited Venue is refused on /lunches");
+        page.navigate(baseUrl.resolve("lunches").toString());
+        assertThat(page.locator("main#lunches")).isVisible();
+
+        assertThat(page.locator("#record-venue option").filter(new Locator.FilterOptions().setHasText(venue)))
+                .hasCount(0);
     }
 
     @Override
     public void assertRecordPastRejectedAsDateNotPast(LocalDate date, String venue) {
-        throw new UnsupportedOperationException("Not implemented yet: today or later is refused on /lunches");
+        submitRecordPast(date, venue);
+
+        assertThat(page.locator("#record-date-not-past")).isVisible();
+        assertThat(page.locator("main#lunch")).not().isAttached();
     }
 
     @Override
     public void assertHeld(String lunchId, LocalDate date, String venue) {
-        throw new UnsupportedOperationException("Not implemented yet: a Held Lunch is shown on /lunches");
+        page.navigate(baseUrl.resolve("lunches").toString());
+
+        Locator listed = page.locator("#earlier-lunches .lunch:has(.lunch-link[href='/lunches/" + lunchId + "'])");
+        assertThat(listed.locator(".lunch-state")).hasAttribute("data-state", "held");
+        assertThat(listed.locator(".lunch-date")).hasAttribute("datetime", date.toString());
+        assertThat(listed.locator(".lunch-venue")).hasText(venue);
+
+        listed.locator(".lunch-link").click();
+        assertThat(page.locator("#lunch-date")).hasAttribute("datetime", date.toString());
+        assertThat(page.locator("#lunch-state")).hasAttribute("data-state", "held");
+        assertThat(page.locator("#lunch-venue")).hasText(venue);
+        assertThat(page.locator("#cancel-lunch-button")).not().isAttached();
+        assertThat(page.locator("#comment-form")).isVisible();
     }
 
     @Override
@@ -161,6 +178,25 @@ class UiLunchDriver implements LunchDriver {
         page.locator("#lunches-link").click();
         page.locator("#lunch-date").fill(date.toString());
         page.locator("#plan-button").click();
+    }
+
+    private void submitRecordPast(LocalDate date, String venue) {
+        page.navigate(baseUrl.resolve("lunches").toString());
+        page.locator("#record-open").click();
+        page.locator("#record-date").fill(date.toString());
+        page.locator("#record-venue").selectOption(new SelectOption().setLabel(venue));
+        page.locator("#record-button").click();
+    }
+
+    /** Waits for a Lunch's page and returns the Lunch's id from its address. */
+    private String lunchIdFromPage() {
+        page.waitForURL(LUNCH_PAGE);
+        assertThat(page.locator("main#lunch")).isVisible();
+        var matcher = LUNCH_PAGE.matcher(page.url());
+        if (!matcher.matches()) {
+            throw new AssertionError("Not on a Lunch page: " + page.url());
+        }
+        return matcher.group(1);
     }
 
     private void submitComment(String lunchId, String text) {

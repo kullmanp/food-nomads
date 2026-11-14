@@ -13,7 +13,7 @@ public interface LunchRepository {
      */
     void add(Lunch lunch);
 
-    /** The Lunch with its comments and their authors loaded. */
+    /** The Lunch with its Venue, comments and their authors loaded. */
     Optional<Lunch> find(UUID id);
 
     /** Like {@link #find}, but holds the Lunch for this transaction, so that its state changes one at a time. */
@@ -21,7 +21,7 @@ public interface LunchRepository {
 
     Optional<Lunch> planned();
 
-    /** All Lunches, in no particular order. */
+    /** All Lunches with their Venues, in no particular order. */
     List<Lunch> all();
 
     void addComment(LunchComment comment);

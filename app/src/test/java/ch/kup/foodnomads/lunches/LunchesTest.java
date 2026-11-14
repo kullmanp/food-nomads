@@ -5,6 +5,10 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 import ch.kup.foodnomads.members.Member;
 import ch.kup.foodnomads.members.MutableClock;
+import ch.kup.foodnomads.venues.InMemoryVenueRepository;
+import ch.kup.foodnomads.venues.Venue;
+import ch.kup.foodnomads.venues.VenueNotFoundException;
+import ch.kup.foodnomads.venues.Venues;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -22,7 +26,9 @@ class LunchesTest {
 
     private final MutableClock clock = new MutableClock(NOW);
     private final InMemoryLunchRepository repository = new InMemoryLunchRepository();
-    private final Lunches lunches = new Lunches(repository, clock);
+    private final InMemoryVenueRepository venueRepository = new InMemoryVenueRepository();
+    private final Venues venues = new Venues(venueRepository);
+    private final Lunches lunches = new Lunches(repository, venues, clock);
 
     private final Member anna = member("Anna");
     private final Member ben = member("Ben");
@@ -81,7 +87,7 @@ class LunchesTest {
     @Test
     void inSummerMidnightInBaselIsTwoHoursBeforeUtc() {
         MutableClock summer = new MutableClock(Instant.parse("2026-07-01T21:59:59Z"));
-        Lunches inSummer = new Lunches(repository, summer);
+        Lunches inSummer = new Lunches(repository, venues, summer);
         assertThat(inSummer.today()).isEqualTo(LocalDate.parse("2026-07-01"));
 
         summer.advance(Duration.ofSeconds(1));
@@ -248,6 +254,179 @@ class LunchesTest {
         LunchComment second = lunches.comment(lunch.id, ben, "Barfi suits me");
 
         assertThat(lunches.lunch(lunch.id).chat()).containsExactly(first, second);
+    }
+
+    @Test
+    void recordingStoresAHeldLunchAtThatVenue() {
+        Venue sternen = venues.propose(anna, "Sternen", null);
+
+        Lunch lunch = lunches.recordPast(TODAY.minusDays(60), sternen.id);
+
+        assertThat(lunch.id).isNotNull();
+        assertThat(lunch.date).isEqualTo(TODAY.minusDays(60));
+        assertThat(lunch.state).isEqualTo(LunchState.HELD);
+        assertThat(lunch.isHeld()).isTrue();
+        assertThat(lunch.isPlanned()).isFalse();
+        assertThat(lunch.venue).isSameAs(sternen);
+        assertThat(lunch.createdAt).isEqualTo(NOW);
+        assertThat(lunch.comments).isEmpty();
+        assertThat(repository.all()).containsExactly(lunch);
+    }
+
+    @Test
+    void recordingLocksTheVenue() {
+        Venue sternen = venues.propose(anna, "Sternen", null);
+
+        lunches.recordPast(TODAY.minusDays(1), sternen.id);
+
+        assertThat(venueRepository.locked()).containsExactly(sternen.id);
+    }
+
+    @Test
+    void aLunchFromYesterdayCanBeRecorded() {
+        Venue sternen = venues.propose(anna, "Sternen", null);
+
+        assertThat(lunches.recordPast(TODAY.minusDays(1), sternen.id).date).isEqualTo(TODAY.minusDays(1));
+    }
+
+    @Test
+    void aLunchFromTodayOrLaterCannotBeRecorded() {
+        Venue sternen = venues.propose(anna, "Sternen", null);
+
+        assertThatExceptionOfType(DateNotPastException.class).isThrownBy(() -> lunches.recordPast(TODAY, sternen.id));
+        assertThatExceptionOfType(DateNotPastException.class)
+                .isThrownBy(() -> lunches.recordPast(TODAY.plusDays(1), sternen.id));
+        assertThat(repository.all()).isEmpty();
+        assertThat(lunches.visitedVenueIds()).isEmpty();
+    }
+
+    @Test
+    void justBeforeMidnightInBaselTodayCannotBeRecordedYet() {
+        Venue sternen = venues.propose(anna, "Sternen", null);
+        // 23:59:59.999999999 in Basel (UTC+1 in winter) on 1 March.
+        clock.advance(Duration.ofHours(13).minusNanos(1));
+
+        assertThatExceptionOfType(DateNotPastException.class).isThrownBy(() -> lunches.recordPast(TODAY, sternen.id));
+        assertThat(lunches.recordPast(TODAY.minusDays(1), sternen.id).date).isEqualTo(TODAY.minusDays(1));
+    }
+
+    @Test
+    void atMidnightInBaselTheDayBeforeCanBeRecorded() {
+        Venue sternen = venues.propose(anna, "Sternen", null);
+        // 00:00 in Basel on 2 March, while it is still 1 March in UTC.
+        clock.advance(Duration.ofHours(13));
+
+        assertThat(lunches.recordPast(TODAY, sternen.id).date).isEqualTo(TODAY);
+    }
+
+    @Test
+    void aLunchAtAnUnknownVenueCannotBeRecorded() {
+        UUID unknown = UUID.randomUUID();
+
+        assertThatExceptionOfType(VenueNotFoundException.class)
+                .isThrownBy(() -> lunches.recordPast(TODAY.minusDays(1), unknown));
+        assertThat(repository.all()).isEmpty();
+    }
+
+    @Test
+    void aVisitedVenueCannotBeRecordedAgain() {
+        Venue sternen = venues.propose(anna, "Sternen", null);
+        Lunch spring = lunches.recordPast(TODAY.minusDays(60), sternen.id);
+
+        assertThatExceptionOfType(VenueVisitedException.class)
+                .isThrownBy(() -> lunches.recordPast(TODAY.minusDays(30), sternen.id));
+        assertThat(repository.all()).containsExactly(spring);
+        assertThat(venueRepository.locked()).containsExactly(sternen.id, sternen.id);
+    }
+
+    @Test
+    void anotherVenueCanBeRecordedAfterOneIsVisited() {
+        Venue sternen = venues.propose(anna, "Sternen", null);
+        Venue roessli = venues.propose(anna, "Rössli", null);
+        lunches.recordPast(TODAY.minusDays(60), sternen.id);
+
+        assertThat(lunches.recordPast(TODAY.minusDays(30), roessli.id).venue).isSameAs(roessli);
+    }
+
+    @Test
+    void aPastLunchCanBeRecordedWhileALunchIsPlanned() {
+        Venue sternen = venues.propose(anna, "Sternen", null);
+        Lunch planned = lunches.plan(TODAY.plusDays(7));
+
+        Lunch held = lunches.recordPast(TODAY.minusDays(60), sternen.id);
+
+        assertThat(lunches.planned()).containsSame(planned);
+        assertThat(lunches.all()).containsExactly(planned, held);
+    }
+
+    @Test
+    void aRecordedLunchCanBeCommentedOn() {
+        Venue sternen = venues.propose(anna, "Sternen", null);
+        Lunch lunch = lunches.recordPast(TODAY.minusDays(60), sternen.id);
+
+        lunches.comment(lunch.id, anna, "The best Cordon bleu so far");
+
+        assertThat(lunches.lunch(lunch.id).chat())
+                .extracting(c -> c.text)
+                .containsExactly("The best Cordon bleu so far");
+    }
+
+    @Test
+    void noVenueIsVisitedAtFirst() {
+        venues.propose(anna, "Sternen", null);
+        lunches.plan(TODAY);
+
+        assertThat(lunches.visitedVenueIds()).isEmpty();
+    }
+
+    @Test
+    void aVenueIsVisitedOnceAHeldLunchHasIt() {
+        Venue sternen = venues.propose(anna, "Sternen", null);
+        venues.propose(anna, "Rössli", null);
+        lunches.recordPast(TODAY.minusDays(60), sternen.id);
+
+        assertThat(lunches.visitedVenueIds()).containsExactly(sternen.id);
+    }
+
+    @Test
+    void onlyAHeldLunchMakesItsVenueVisited() {
+        Venue sternen = venues.propose(anna, "Sternen", null);
+        Lunch cancelled = new Lunch();
+        cancelled.id = UUID.randomUUID();
+        cancelled.date = TODAY;
+        cancelled.state = LunchState.CANCELLED;
+        cancelled.venue = sternen;
+        repository.add(cancelled);
+
+        assertThat(lunches.visitedVenueIds()).isEmpty();
+        assertThat(lunches.unvisitedVenues()).containsExactly(sternen);
+        assertThat(lunches.recordPast(TODAY.minusDays(1), sternen.id).venue).isSameAs(sternen);
+    }
+
+    @Test
+    void offersTheUnvisitedVenuesByName() {
+        Venue sternen = venues.propose(anna, "Sternen", null);
+        Venue roessli = venues.propose(anna, "Rössli", null);
+        Venue ankerLower = venues.propose(anna, "anker", null);
+        Venue zum = venues.propose(anna, "Zum Bären", null);
+        // Ids in the opposite order, so that only the names can put them in order.
+        sternen.id = UUID.fromString("00000000-0000-0000-0000-000000000001");
+        roessli.id = UUID.fromString("00000000-0000-0000-0000-000000000002");
+        ankerLower.id = UUID.fromString("00000000-0000-0000-0000-000000000003");
+        lunches.recordPast(TODAY.minusDays(60), zum.id);
+
+        assertThat(lunches.unvisitedVenues()).containsExactly(ankerLower, roessli, sternen);
+    }
+
+    @Test
+    void offersVenuesWithTheSameNameInAStableOrder() {
+        Venue first = venues.propose(anna, "Sternen", null);
+        Venue second = venues.propose(anna, "Sternen", null);
+
+        assertThat(lunches.unvisitedVenues())
+                .containsExactlyElementsOf(Stream.of(first, second)
+                        .sorted(Comparator.comparing((Venue v) -> v.id))
+                        .toList());
     }
 
     private Lunch planAndCancel(LocalDate date) {

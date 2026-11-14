@@ -44,4 +44,13 @@ public class Venues {
     public List<Venue> candidates() {
         return repository.newestFirst();
     }
+
+    /**
+     * The Venue, held for the caller's transaction, so that two Lunches can't make it visited at
+     * once. Fails with {@link VenueNotFoundException} if there is none with this id.
+     */
+    @Transactional
+    public Venue lock(UUID id) {
+        return repository.findForUpdate(id).orElseThrow(VenueNotFoundException::new);
+    }
 }

@@ -33,10 +33,11 @@ main > p { margin: 0.875rem var(--gutter) 1.125rem; font-size: 1.0625rem; }
 main > [role=alert] { font-weight: 800; }
 [role=alert] { margin: 0; color: var(--alert); }
 
-button, input, textarea { font: inherit; color: inherit; }
+button, input, select, textarea { font: inherit; color: inherit; }
 button { min-height: 2.75rem; cursor: pointer; }
 label { font-size: 0.9375rem; font-weight: 500; }
 input { height: 3.375rem; padding: 0 0.75rem; border: 2px solid var(--ink); border-radius: 0; background: var(--paper); font-size: 1.125rem; }
+select { height: 3.375rem; padding: 0 0.75rem; border: 2px solid var(--ink); border-radius: 0; background: var(--paper); font-size: 1.125rem; }
 textarea { padding: 0.625rem 0.75rem; border: 2px solid var(--ink); border-radius: 0; background: var(--paper); font-size: 1.125rem; resize: vertical; }
 
 .solid {
@@ -129,6 +130,8 @@ main > .poster {
 .candidate > * { grid-column: 2; }
 .candidate h3 { margin: 0; font-size: 1.875rem; font-weight: 800; line-height: 1.08; letter-spacing: -0.025em; }
 .candidate p { margin: 0.25rem 0 0; font-size: 0.9375rem; }
+.candidate.visited h3 { text-decoration: line-through; text-decoration-thickness: 3px; }
+.candidate .venue-visited { font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; }
 
 /* A bottom sheet out of <details>: the open summary becomes the backdrop that closes it. */
 .sheet {
@@ -215,6 +218,9 @@ main > .poster {
 }
 .lunch-link { color: var(--ink); font-size: 1.5rem; font-weight: 800; letter-spacing: -0.02em; }
 .lunch-state { font-size: 0.9375rem; font-weight: 500; }
+#earlier-lunches .lunch { flex-wrap: wrap; }
+#earlier-lunches .lunch-venue { flex-basis: 100%; }
+#lunch-venue { font-size: 1.5rem; font-weight: 800; }
 .back { margin: 1rem var(--gutter) 0; color: var(--ink); font-weight: 500; }
 #lunch > h1 { font-size: 3.5rem; }
 #lunch > form:not(.stack) { margin: 0 var(--gutter); }

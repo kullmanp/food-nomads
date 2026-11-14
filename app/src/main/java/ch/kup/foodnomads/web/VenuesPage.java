@@ -1,5 +1,6 @@
 package ch.kup.foodnomads.web;
 
+import ch.kup.foodnomads.lunches.Lunches;
 import ch.kup.foodnomads.members.Membership;
 import ch.kup.foodnomads.venues.Venue;
 import ch.kup.foodnomads.venues.Venues;
@@ -22,9 +23,11 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
+import java.util.UUID;
 
 /**
- * The candidate Venues, newest first, with a form to propose one. The form posts with htmx,
+ * The candidate Venues, newest first and marked visited or not, with a form to propose one. The form posts with htmx,
  * which swaps in the re-rendered list; without JavaScript it is an ordinary form post.
  */
 @Path("/venues")
@@ -36,15 +39,17 @@ public class VenuesPage {
 
     static final DateTimeFormatter DATE = DateTimeFormatter.ofPattern("d MMM yyyy", Locale.ENGLISH);
 
-    public record Candidate(String name, String address, String proposedBy, String proposedAt, String proposedOn) {
-        static Candidate of(Venue venue) {
+    public record Candidate(
+            String name, String address, String proposedBy, String proposedAt, String proposedOn, boolean visited) {
+        static Candidate of(Venue venue, boolean visited) {
             var proposedAt = venue.proposedAt.atZone(ZONE);
             return new Candidate(
                     venue.name,
                     venue.address,
                     venue.proposedBy.displayName,
                     proposedAt.toOffsetDateTime().toString(),
-                    DATE.format(proposedAt));
+                    DATE.format(proposedAt),
+                    visited);
         }
     }
 
@@ -60,6 +65,9 @@ public class VenuesPage {
 
     @Inject
     Venues venues;
+
+    @Inject
+    Lunches lunches;
 
     @Inject
     Membership membership;
@@ -92,6 +100,11 @@ public class VenuesPage {
     }
 
     private TemplateInstance page(Draft draft) {
-        return Templates.venues(venues.candidates().stream().map(Candidate::of).toList(), draft);
+        Set<UUID> visited = lunches.visitedVenueIds();
+        return Templates.venues(
+                venues.candidates().stream()
+                        .map(venue -> Candidate.of(venue, visited.contains(venue.id)))
+                        .toList(),
+                draft);
     }
 }

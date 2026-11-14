@@ -74,12 +74,7 @@ class ApiLunchDriver implements LunchDriver {
     public void assertCancelled(String lunchId) {
         assertEquals("cancelled", lunch(lunchId).path("state").asText(), "state of Lunch " + lunchId);
 
-        HttpResponse<String> response = api.get("api/lunches");
-        assertEquals(200, response.statusCode(), "GET /api/lunches: " + response.body());
-        JsonNode listed = StreamSupport.stream(ApiClient.readJson(response).spliterator(), false)
-                .filter(lunch -> lunch.path("id").asText().equals(lunchId))
-                .findFirst()
-                .orElseThrow(() -> new AssertionError("Lunch " + lunchId + " is not listed"));
+        JsonNode listed = listed(lunchId);
         assertEquals("cancelled", listed.path("state").asText(), "state in " + listed);
     }
 
@@ -110,22 +105,34 @@ class ApiLunchDriver implements LunchDriver {
 
     @Override
     public String recordPast(LocalDate date, String venue) {
-        throw new UnsupportedOperationException("Not implemented yet: records a past Lunch on /api/lunches/past");
+        HttpResponse<String> response = api.post("api/lunches/past", recordPastRequest(date, venue));
+
+        assertEquals(201, response.statusCode(), "POST /api/lunches/past: " + response.body());
+        JsonNode lunch = ApiClient.readJson(response);
+        assertEquals("held", lunch.path("state").asText(), "state in " + lunch);
+        return lunch.path("id").asText();
     }
 
     @Override
     public void assertRecordPastRejectedAsVenueVisited(LocalDate date, String venue) {
-        throw new UnsupportedOperationException("Not implemented yet: a Visited Venue is refused on /api/lunches/past");
+        assertRefused(api.post("api/lunches/past", recordPastRequest(date, venue)), 409, "venue-visited");
     }
 
     @Override
     public void assertRecordPastRejectedAsDateNotPast(LocalDate date, String venue) {
-        throw new UnsupportedOperationException("Not implemented yet: today or later is refused on /api/lunches/past");
+        assertRefused(api.post("api/lunches/past", recordPastRequest(date, venue)), 400, "date-not-past");
     }
 
     @Override
     public void assertHeld(String lunchId, LocalDate date, String venue) {
-        throw new UnsupportedOperationException("Not implemented yet: a Held Lunch is shown on /api/lunches");
+        JsonNode lunch = lunch(lunchId);
+        assertEquals(date.toString(), lunch.path("date").asText(), "date in " + lunch);
+        assertEquals("held", lunch.path("state").asText(), "state in " + lunch);
+        assertEquals(venue, lunch.path("venue").path("name").asText(), "venue in " + lunch);
+
+        JsonNode listed = listed(lunchId);
+        assertEquals("held", listed.path("state").asText(), "state in " + listed);
+        assertEquals(venue, listed.path("venue").path("name").asText(), "venue in " + listed);
     }
 
     @Override
@@ -133,6 +140,28 @@ class ApiLunchDriver implements LunchDriver {
         HttpResponse<String> response = api.get("api/lunches");
 
         assertEquals(401, response.statusCode(), "GET /api/lunches: " + response.body());
+    }
+
+    /** The Lunch with this id as {@code GET /api/lunches} lists it. */
+    private JsonNode listed(String lunchId) {
+        HttpResponse<String> response = api.get("api/lunches");
+        assertEquals(200, response.statusCode(), "GET /api/lunches: " + response.body());
+        return StreamSupport.stream(ApiClient.readJson(response).spliterator(), false)
+                .filter(lunch -> lunch.path("id").asText().equals(lunchId))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("Lunch " + lunchId + " is not listed"));
+    }
+
+    /** The id of the Venue with this name, from {@code GET /api/venues}. */
+    private String venueId(String name) {
+        HttpResponse<String> response = api.get("api/venues");
+        assertEquals(200, response.statusCode(), "GET /api/venues: " + response.body());
+        return StreamSupport.stream(ApiClient.readJson(response).spliterator(), false)
+                .filter(venue -> venue.path("name").asText().equals(name))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("No Venue '" + name + "' in " + response.body()))
+                .path("id")
+                .asText();
     }
 
     private JsonNode lunch(String lunchId) {
@@ -148,6 +177,10 @@ class ApiLunchDriver implements LunchDriver {
 
     private static ObjectNode planRequest(LocalDate date) {
         return ApiClient.newObject().put("date", date.toString());
+    }
+
+    private ObjectNode recordPastRequest(LocalDate date, String venue) {
+        return ApiClient.newObject().put("date", date.toString()).put("venueId", venueId(venue));
     }
 
     private static ObjectNode commentRequest(String text) {

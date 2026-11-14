@@ -1,11 +1,15 @@
 package ch.kup.foodnomads.lunches;
 
+import ch.kup.foodnomads.venues.Venue;
 import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -32,7 +36,12 @@ public class Lunch extends PanacheEntityBase {
     @Column(nullable = false)
     public LunchState state;
 
-    /** When it was planned. Orders Lunches on the same date. */
+    /** Where it took place. Null until a Venue is picked. A Held Lunch always has one. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "venue_id")
+    public Venue venue;
+
+    /** When it was planned or recorded. Orders Lunches on the same date. */
     @Column(name = "created_at", nullable = false)
     public Instant createdAt;
 
@@ -41,6 +50,10 @@ public class Lunch extends PanacheEntityBase {
 
     public boolean isPlanned() {
         return state == LunchState.PLANNED;
+    }
+
+    public boolean isHeld() {
+        return state == LunchState.HELD;
     }
 
     /** The Lunch Comments as a chat, oldest first. */

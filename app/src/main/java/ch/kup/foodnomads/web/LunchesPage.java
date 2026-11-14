@@ -2,14 +2,18 @@ package ch.kup.foodnomads.web;
 
 import ch.kup.foodnomads.lunches.CommentTextRequiredException;
 import ch.kup.foodnomads.lunches.DateInPastException;
+import ch.kup.foodnomads.lunches.DateNotPastException;
 import ch.kup.foodnomads.lunches.Lunch;
 import ch.kup.foodnomads.lunches.LunchAlreadyPlannedException;
 import ch.kup.foodnomads.lunches.LunchComment;
 import ch.kup.foodnomads.lunches.LunchNotFoundException;
 import ch.kup.foodnomads.lunches.LunchNotPlannedException;
 import ch.kup.foodnomads.lunches.Lunches;
+import ch.kup.foodnomads.lunches.VenueVisitedException;
 import ch.kup.foodnomads.members.Member;
 import ch.kup.foodnomads.members.Membership;
+import ch.kup.foodnomads.venues.Venue;
+import ch.kup.foodnomads.venues.VenueNotFoundException;
 import io.quarkus.qute.CheckedTemplate;
 import io.quarkus.qute.TemplateInstance;
 import io.quarkus.security.identity.SecurityIdentity;
@@ -34,8 +38,9 @@ import java.util.Locale;
 import java.util.UUID;
 
 /**
- * The Lunches: planning one when none is planned, the list, and a Lunch's own page with its chat.
- * The forms are ordinary form posts that come back to a page, so a reload doesn't post again.
+ * The Lunches: planning one when none is planned, recording one from before the app, the list,
+ * and a Lunch's own page with its chat. The forms are ordinary form posts that come back to a
+ * page, so a reload doesn't post again.
  */
 @Path("/lunches")
 @Produces(MediaType.TEXT_HTML)
@@ -45,14 +50,23 @@ public class LunchesPage {
 
     private static final URI LIST = URI.create("/lunches");
 
-    public record LunchRow(UUID id, String date, String dateOn, String state, boolean planned) {
+    /** {@code venue} is the Venue's name, or null for none yet. */
+    public record LunchRow(UUID id, String date, String dateOn, String state, boolean planned, String venue) {
         static LunchRow of(Lunch lunch) {
             return new LunchRow(
                     lunch.id,
                     lunch.date.toString(),
                     VenuesPage.DATE.format(lunch.date),
                     lunch.state.name().toLowerCase(Locale.ROOT),
-                    lunch.isPlanned());
+                    lunch.isPlanned(),
+                    lunch.venue == null ? null : lunch.venue.name);
+        }
+    }
+
+    /** A Venue a past Lunch can be recorded at. */
+    public record VenueOption(String id, String name) {
+        static VenueOption of(Venue venue) {
+            return new VenueOption(venue.id.toString(), venue.name);
         }
     }
 
@@ -72,6 +86,11 @@ public class LunchesPage {
         static final PlanDraft EMPTY = new PlanDraft("", null);
     }
 
+    /** What the record form shows. {@code error} is null, or which rule refused the Lunch. */
+    public record RecordDraft(String date, String venueId, String error) {
+        static final RecordDraft EMPTY = new RecordDraft("", "", null);
+    }
+
     /** What the comment form shows after a refused comment. */
     public record CommentDraft(String text, boolean rejected) {
         static final CommentDraft EMPTY = new CommentDraft("", false);
@@ -79,8 +98,18 @@ public class LunchesPage {
 
     @CheckedTemplate
     static class Templates {
-        /** @param planned the Planned Lunch, or null if there is none */
-        static native TemplateInstance lunches(LunchRow planned, List<LunchRow> others, String today, PlanDraft draft);
+        /**
+         * @param planned the Planned Lunch, or null if there is none
+         * @param venues the unvisited Venues, which a past Lunch can be recorded at
+         */
+        static native TemplateInstance lunches(
+                LunchRow planned,
+                List<LunchRow> others,
+                String today,
+                PlanDraft draft,
+                List<VenueOption> venues,
+                String yesterday,
+                RecordDraft pastDraft);
 
         static native TemplateInstance lunch(LunchRow lunch, List<Comment> comments, CommentDraft draft);
     }
@@ -96,7 +125,7 @@ public class LunchesPage {
 
     @GET
     public TemplateInstance list() {
-        return listPage(PlanDraft.EMPTY);
+        return listPage(PlanDraft.EMPTY, RecordDraft.EMPTY);
     }
 
     @POST
@@ -109,7 +138,7 @@ public class LunchesPage {
             parsed = LocalDate.parse(given);
         } catch (DateTimeParseException e) {
             return Response.status(422)
-                    .entity(listPage(new PlanDraft(given, "date-required")))
+                    .entity(listPage(new PlanDraft(given, "date-required"), RecordDraft.EMPTY))
                     .build();
         }
         try {
@@ -117,13 +146,50 @@ public class LunchesPage {
             return Response.seeOther(lunchPath(lunch.id)).build();
         } catch (DateInPastException e) {
             return Response.status(422)
-                    .entity(listPage(new PlanDraft(given, "date-in-past")))
+                    .entity(listPage(new PlanDraft(given, "date-in-past"), RecordDraft.EMPTY))
                     .build();
         } catch (LunchAlreadyPlannedException e) {
             return Response.status(Response.Status.CONFLICT)
-                    .entity(listPage(new PlanDraft(given, "already-planned")))
+                    .entity(listPage(new PlanDraft(given, "already-planned"), RecordDraft.EMPTY))
                     .build();
         }
+    }
+
+    @POST
+    @Path("past")
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    public Response recordPast(@FormParam("date") String date, @FormParam("venue") String venue) {
+        currentMember();
+        String givenDate = date == null ? "" : date.strip();
+        String givenVenue = venue == null ? "" : venue.strip();
+        LocalDate parsedDate;
+        try {
+            parsedDate = LocalDate.parse(givenDate);
+        } catch (DateTimeParseException e) {
+            return recordRefused(422, givenDate, givenVenue, "date-required");
+        }
+        UUID venueId;
+        try {
+            venueId = UUID.fromString(givenVenue);
+        } catch (IllegalArgumentException e) {
+            return recordRefused(422, givenDate, givenVenue, "venue-required");
+        }
+        try {
+            Lunch lunch = lunches.recordPast(parsedDate, venueId);
+            return Response.seeOther(lunchPath(lunch.id)).build();
+        } catch (DateNotPastException e) {
+            return recordRefused(422, givenDate, givenVenue, "date-not-past");
+        } catch (VenueNotFoundException e) {
+            throw new NotFoundException(e);
+        } catch (VenueVisitedException e) {
+            return recordRefused(Response.Status.CONFLICT.getStatusCode(), givenDate, givenVenue, "venue-visited");
+        }
+    }
+
+    private Response recordRefused(int status, String date, String venueId, String error) {
+        return Response.status(status)
+                .entity(listPage(PlanDraft.EMPTY, new RecordDraft(date, venueId, error)))
+                .build();
     }
 
     @GET
@@ -167,11 +233,19 @@ public class LunchesPage {
         return membership.current(identity).orElseThrow(() -> new NotAuthorizedException("Member"));
     }
 
-    private TemplateInstance listPage(PlanDraft draft) {
+    private TemplateInstance listPage(PlanDraft draft, RecordDraft pastDraft) {
         List<LunchRow> all = lunches.all().stream().map(LunchRow::of).toList();
         LunchRow planned = all.stream().filter(LunchRow::planned).findFirst().orElse(null);
         List<LunchRow> others = all.stream().filter(row -> !row.planned()).toList();
-        return Templates.lunches(planned, others, lunches.today().toString(), draft);
+        LocalDate today = lunches.today();
+        return Templates.lunches(
+                planned,
+                others,
+                today.toString(),
+                draft,
+                lunches.unvisitedVenues().stream().map(VenueOption::of).toList(),
+                today.minusDays(1).toString(),
+                pastDraft);
     }
 
     private TemplateInstance lunchPage(UUID id, CommentDraft draft) {

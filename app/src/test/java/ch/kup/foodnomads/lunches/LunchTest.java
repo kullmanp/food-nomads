@@ -43,6 +43,20 @@ class LunchTest {
         assertThat(lunch.isPlanned()).isFalse();
     }
 
+    @Test
+    void onlyAHeldLunchIsHeld() {
+        Lunch lunch = new Lunch();
+        lunch.state = LunchState.HELD;
+        assertThat(lunch.isHeld()).isTrue();
+        assertThat(lunch.isPlanned()).isFalse();
+
+        lunch.state = LunchState.PLANNED;
+        assertThat(lunch.isHeld()).isFalse();
+
+        lunch.state = LunchState.CANCELLED;
+        assertThat(lunch.isHeld()).isFalse();
+    }
+
     private static LunchComment comment(Instant writtenAt) {
         return comment(writtenAt, UUID.randomUUID().toString());
     }

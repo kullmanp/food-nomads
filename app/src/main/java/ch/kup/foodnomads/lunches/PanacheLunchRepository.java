@@ -39,7 +39,10 @@ class PanacheLunchRepository implements LunchRepository {
 
     @Override
     public Optional<Lunch> find(UUID id) {
-        return Lunch.find("from Lunch l left join fetch l.comments c left join fetch c.author where l.id = ?1", id)
+        return Lunch.find(
+                        "from Lunch l left join fetch l.venue left join fetch l.comments c left join fetch c.author"
+                                + " where l.id = ?1",
+                        id)
                 .singleResultOptional();
     }
 
@@ -55,7 +58,7 @@ class PanacheLunchRepository implements LunchRepository {
 
     @Override
     public List<Lunch> all() {
-        return Lunch.listAll();
+        return Lunch.find("from Lunch l left join fetch l.venue").list();
     }
 
     @Override

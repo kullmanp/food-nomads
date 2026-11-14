@@ -36,10 +36,50 @@
             <a class="lunch-link" href="/lunches/{lunch.id}">
                 <time class="lunch-date" datetime="{lunch.date}">{lunch.dateOn}</time>
             </a>
-            <span class="lunch-state" data-state="{lunch.state}">{#if lunch.state == 'cancelled'}{msg:lunch_state_cancelled}{/if}</span>
+            <span class="lunch-state" data-state="{lunch.state}">{#if lunch.state == 'held'}{msg:lunch_state_held}{#else if lunch.state == 'cancelled'}{msg:lunch_state_cancelled}{/if}</span>
+            {#if lunch.venue}
+            <span class="lunch-venue">{lunch.venue}</span>
+            {/if}
         </li>
         {/for}
     </ul>
+    {/if}
+
+    {#if venues.isEmpty}
+    <p id="record-no-venues">{msg:lunches_record_no_venues}</p>
+    {#else}
+    <details id="record" class="sheet"{#if pastDraft.error} open{/if}>
+        <summary id="record-open">{msg:lunches_record_title}</summary>
+        <form id="record-form" method="post" action="/lunches/past" novalidate>
+            <div class="sheet-head">
+                <h2>{msg:lunches_record_title}</h2>
+                <button class="sheet-close" type="button" aria-label="{msg:sheet_close}"
+                        onclick="this.closest('details').open = false">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5l14 14M19 5 5 19"/></svg>
+                </button>
+            </div>
+            <label for="record-date">{msg:lunches_date}</label>
+            <input id="record-date" name="date" type="date" max="{yesterday}" value="{pastDraft.date}" required>
+            {#if pastDraft.error == 'date-not-past'}
+            <p id="record-date-not-past" role="alert">{msg:lunches_record_date_not_past}</p>
+            {#else if pastDraft.error == 'date-required'}
+            <p id="record-date-required" role="alert">{msg:lunches_date_required}</p>
+            {/if}
+            <label for="record-venue">{msg:lunches_record_venue}</label>
+            <select id="record-venue" name="venue" required>
+                <option value="">{msg:lunches_record_choose_venue}</option>
+                {#for venue in venues}
+                <option value="{venue.id}"{#if pastDraft.venueId == venue.id} selected{/if}>{venue.name}</option>
+                {/for}
+            </select>
+            {#if pastDraft.error == 'venue-required'}
+            <p id="record-venue-required" role="alert">{msg:lunches_record_venue_required}</p>
+            {#else if pastDraft.error == 'venue-visited'}
+            <p id="record-venue-visited" role="alert">{msg:lunches_record_venue_visited}</p>
+            {/if}
+            <button id="record-button" class="solid" type="submit">{msg:lunches_record}</button>
+        </form>
+    </details>
     {/if}
 </main>
 {#tabs current="lunches" /}

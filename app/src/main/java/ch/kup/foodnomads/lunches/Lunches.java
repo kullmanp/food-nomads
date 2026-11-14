@@ -1,17 +1,27 @@
 package ch.kup.foodnomads.lunches;
 
 import ch.kup.foodnomads.members.Member;
+import ch.kup.foodnomads.venues.Venue;
+import ch.kup.foodnomads.venues.VenueNotFoundException;
+import ch.kup.foodnomads.venues.Venues;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.transaction.Transactional;
+import java.text.Collator;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
-/** Planning and cancelling Lunches, and talking them over in their Lunch Comments. */
+/**
+ * Planning and cancelling Lunches, recording the ones from before the app, and talking them over
+ * in their Lunch Comments. Which Venues are visited follows from the Held Lunches.
+ */
 @ApplicationScoped
 public class Lunches {
 
@@ -25,10 +35,12 @@ public class Lunches {
             .thenComparing(l -> l.id);
 
     private final LunchRepository repository;
+    private final Venues venues;
     private final Clock clock;
 
-    public Lunches(LunchRepository repository, Clock clock) {
+    public Lunches(LunchRepository repository, Venues venues, Clock clock) {
         this.repository = repository;
+        this.venues = venues;
         this.clock = clock;
     }
 
@@ -59,6 +71,54 @@ public class Lunches {
     }
 
     /**
+     * Records a Lunch from before the app as held, on this date at this Venue, which makes the
+     * Venue visited. It isn't the Planned Lunch, so it can be recorded while one is planned. Fails
+     * with {@link DateNotPastException} unless the date is before today, with
+     * {@link VenueNotFoundException} for an unknown Venue and with {@link VenueVisitedException} if
+     * a Lunch has been held there already.
+     */
+    @Transactional
+    public Lunch recordPast(LocalDate date, UUID venueId) {
+        if (!date.isBefore(today())) {
+            throw new DateNotPastException();
+        }
+        // Locked before asking whether it's visited, so that two Members can't both record it.
+        Venue venue = venues.lock(venueId);
+        if (visitedVenueIds().contains(venue.id)) {
+            throw new VenueVisitedException();
+        }
+        Lunch lunch = new Lunch();
+        lunch.id = UUID.randomUUID();
+        lunch.date = date;
+        lunch.state = LunchState.HELD;
+        lunch.venue = venue;
+        lunch.createdAt = clock.instant();
+        repository.add(lunch);
+        return lunch;
+    }
+
+    /** The ids of the Visited Venues: those a Held Lunch has as its Venue. */
+    @Transactional
+    public Set<UUID> visitedVenueIds() {
+        return repository.all().stream()
+                .filter(Lunch::isHeld)
+                .map(lunch -> lunch.venue.id)
+                .collect(Collectors.toUnmodifiableSet());
+    }
+
+    /** The Venues no Lunch has been held at, by name. */
+    @Transactional
+    public List<Venue> unvisitedVenues() {
+        Set<UUID> visited = visitedVenueIds();
+        Comparator<Venue> byName = Comparator.comparing((Venue v) -> v.name, Collator.getInstance(Locale.GERMAN))
+                .thenComparing(v -> v.id);
+        return venues.candidates().stream()
+                .filter(venue -> !visited.contains(venue.id))
+                .sorted(byName)
+                .toList();
+    }
+
+    /**
      * Calls the Planned Lunch off. It stays, as a Cancelled Lunch. Fails with
      * {@link LunchNotPlannedException} if it is cancelled already.
      */
@@ -76,7 +136,7 @@ public class Lunches {
         return repository.planned();
     }
 
-    /** The Lunch with its comments and their authors loaded, or {@link LunchNotFoundException}. */
+    /** The Lunch with its Venue, comments and their authors loaded, or {@link LunchNotFoundException}. */
     @Transactional
     public Lunch lunch(UUID id) {
         return repository.find(id).orElseThrow(LunchNotFoundException::new);

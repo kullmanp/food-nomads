@@ -1,6 +1,8 @@
 package ch.kup.foodnomads.acceptance.drivers.api;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import ch.kup.foodnomads.acceptance.drivers.VenueDriver;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -32,25 +34,23 @@ class ApiVenueDriver implements VenueDriver {
 
     @Override
     public void assertCandidate(String name, String address, String proposedBy) {
-        HttpResponse<String> response = api.get("api/venues");
-        assertEquals(200, response.statusCode(), "GET /api/venues: " + response.body());
-
-        JsonNode venue = StreamSupport.stream(ApiClient.readJson(response).spliterator(), false)
-                .filter(v -> v.path("name").asText().equals(name))
-                .findFirst()
-                .orElseThrow(() -> new AssertionError("No Venue '" + name + "' in " + response.body()));
+        JsonNode venue = listed(name);
         assertEquals(address, venue.path("address").asText(""), "address in " + venue);
         assertEquals(proposedBy, venue.path("proposedBy").asText(), "proposedBy in " + venue);
     }
 
     @Override
     public void assertVisited(String name) {
-        throw new UnsupportedOperationException("Not implemented yet: Visited Venues are marked on /api/venues");
+        JsonNode venue = listed(name);
+        assertTrue(venue.path("visited").isBoolean(), "visited in " + venue);
+        assertTrue(venue.path("visited").asBoolean(), "visited in " + venue);
     }
 
     @Override
     public void assertNotVisited(String name) {
-        throw new UnsupportedOperationException("Not implemented yet: Visited Venues are marked on /api/venues");
+        JsonNode venue = listed(name);
+        assertTrue(venue.path("visited").isBoolean(), "visited in " + venue);
+        assertFalse(venue.path("visited").asBoolean(), "visited in " + venue);
     }
 
     @Override
@@ -58,6 +58,16 @@ class ApiVenueDriver implements VenueDriver {
         HttpResponse<String> response = api.get("api/venues");
 
         assertEquals(401, response.statusCode(), "GET /api/venues: " + response.body());
+    }
+
+    /** The Venue with this name as {@code GET /api/venues} lists it. */
+    private JsonNode listed(String name) {
+        HttpResponse<String> response = api.get("api/venues");
+        assertEquals(200, response.statusCode(), "GET /api/venues: " + response.body());
+        return StreamSupport.stream(ApiClient.readJson(response).spliterator(), false)
+                .filter(v -> v.path("name").asText().equals(name))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("No Venue '" + name + "' in " + response.body()));
     }
 
     private static ObjectNode proposeRequest(String name, String address) {

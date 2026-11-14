@@ -3,8 +3,12 @@
 <main id="lunch">
     <a id="back-to-lunches" class="back" href="/lunches">{msg:lunches_title}</a>
     <h1><time id="lunch-date" datetime="{lunch.date}">{lunch.dateOn}</time></h1>
-    <p id="lunch-state" data-state="{lunch.state}">{#if lunch.planned}{msg:lunch_state_planned}{#else}{msg:lunch_state_cancelled}{/if}</p>
+    <p id="lunch-state" data-state="{lunch.state}">{#if lunch.planned}{msg:lunch_state_planned}{#else if lunch.state == 'held'}{msg:lunch_state_held}{#else}{msg:lunch_state_cancelled}{/if}</p>
+    {#if lunch.venue}
+    <p id="lunch-venue">{lunch.venue}</p>
+    {#else}
     <p id="lunch-no-venue">{msg:lunch_no_venue}</p>
+    {/if}
 
     {#if lunch.planned}
     <form id="cancel-lunch-form" method="post" action="/lunches/{lunch.id}/cancel"

@@ -14,8 +14,11 @@
     {#else}
     <ul id="candidates">
         {#for candidate in candidates}
-        <li class="candidate">
+        <li class="candidate{#if candidate.visited} visited{/if}">
             <h3 class="venue-name">{candidate.name}</h3>
+            {#if candidate.visited}
+            <p class="venue-visited">{msg:venues_visited}</p>
+            {/if}
             {#if candidate.address}
             <p class="venue-address">{candidate.address}</p>
             {/if}

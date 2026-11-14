@@ -1,5 +1,6 @@
 package ch.kup.foodnomads.api;
 
+import ch.kup.foodnomads.lunches.Lunches;
 import ch.kup.foodnomads.members.Membership;
 import ch.kup.foodnomads.venues.Venue;
 import ch.kup.foodnomads.venues.Venues;
@@ -16,16 +17,19 @@ import jakarta.ws.rs.core.Response;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
-/** The candidate Venues, newest first, and proposing a new one. */
+/** The candidate Venues, newest first, marked visited or not, and proposing a new one. */
 @Path("/api/venues")
 @Produces(MediaType.APPLICATION_JSON)
 public class VenuesResource {
 
-    public record VenueJson(UUID id, String name, String address, String proposedBy, Instant proposedAt) {
-        static VenueJson of(Venue venue) {
-            return new VenueJson(venue.id, venue.name, venue.address, venue.proposedBy.displayName, venue.proposedAt);
+    public record VenueJson(
+            UUID id, String name, String address, String proposedBy, Instant proposedAt, boolean visited) {
+        static VenueJson of(Venue venue, boolean visited) {
+            return new VenueJson(
+                    venue.id, venue.name, venue.address, venue.proposedBy.displayName, venue.proposedAt, visited);
         }
     }
 
@@ -35,6 +39,9 @@ public class VenuesResource {
     Venues venues;
 
     @Inject
+    Lunches lunches;
+
+    @Inject
     Membership membership;
 
     @Inject
@@ -42,7 +49,10 @@ public class VenuesResource {
 
     @GET
     public List<VenueJson> candidates() {
-        return venues.candidates().stream().map(VenueJson::of).toList();
+        Set<UUID> visited = lunches.visitedVenueIds();
+        return venues.candidates().stream()
+                .map(venue -> VenueJson.of(venue, visited.contains(venue.id)))
+                .toList();
     }
 
     @POST
@@ -55,7 +65,7 @@ public class VenuesResource {
         try {
             Venue venue = venues.propose(proposer, request.name(), request.address());
             return Response.status(Response.Status.CREATED)
-                    .entity(VenueJson.of(venue))
+                    .entity(VenueJson.of(venue, false))
                     .build();
         } catch (IllegalArgumentException e) {
             return nameRequired();

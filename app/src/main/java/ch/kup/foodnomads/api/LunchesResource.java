@@ -2,14 +2,18 @@ package ch.kup.foodnomads.api;
 
 import ch.kup.foodnomads.lunches.CommentTextRequiredException;
 import ch.kup.foodnomads.lunches.DateInPastException;
+import ch.kup.foodnomads.lunches.DateNotPastException;
 import ch.kup.foodnomads.lunches.Lunch;
 import ch.kup.foodnomads.lunches.LunchAlreadyPlannedException;
 import ch.kup.foodnomads.lunches.LunchComment;
 import ch.kup.foodnomads.lunches.LunchNotFoundException;
 import ch.kup.foodnomads.lunches.LunchNotPlannedException;
 import ch.kup.foodnomads.lunches.Lunches;
+import ch.kup.foodnomads.lunches.VenueVisitedException;
 import ch.kup.foodnomads.members.Member;
 import ch.kup.foodnomads.members.Membership;
+import ch.kup.foodnomads.venues.Venue;
+import ch.kup.foodnomads.venues.VenueNotFoundException;
 import io.quarkus.security.identity.SecurityIdentity;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
@@ -29,17 +33,22 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
-/** Planning and cancelling Lunches, and their Lunch Comments. */
+/** Planning and cancelling Lunches, recording past ones, and their Lunch Comments. */
 @Path("/api/lunches")
 @Produces(MediaType.APPLICATION_JSON)
 public class LunchesResource {
 
-    /** A Lunch's Venue. Lunches have none until a later ticket lets Members pick one. */
-    public record VenueJson(UUID id, String name) {}
+    /** A Lunch's Venue. A Planned Lunch has none until a Member picks one. */
+    public record VenueJson(UUID id, String name) {
+        /** Null for no Venue. */
+        static VenueJson of(Venue venue) {
+            return venue == null ? null : new VenueJson(venue.id, venue.name);
+        }
+    }
 
     public record LunchSummaryJson(UUID id, LocalDate date, String state, VenueJson venue) {
         static LunchSummaryJson of(Lunch lunch) {
-            return new LunchSummaryJson(lunch.id, lunch.date, stateOf(lunch), null);
+            return new LunchSummaryJson(lunch.id, lunch.date, stateOf(lunch), VenueJson.of(lunch.venue));
         }
     }
 
@@ -49,7 +58,7 @@ public class LunchesResource {
                     lunch.id,
                     lunch.date,
                     stateOf(lunch),
-                    null,
+                    VenueJson.of(lunch.venue),
                     lunch.chat().stream().map(CommentJson::of).toList());
         }
     }
@@ -61,6 +70,8 @@ public class LunchesResource {
     }
 
     public record PlanRequest(LocalDate date) {}
+
+    public record RecordPastRequest(LocalDate date, UUID venueId) {}
 
     public record CommentRequest(String text) {}
 
@@ -112,6 +123,31 @@ public class LunchesResource {
             return error(Response.Status.BAD_REQUEST, "date-in-past");
         } catch (LunchAlreadyPlannedException e) {
             return error(Response.Status.CONFLICT, "lunch-already-planned");
+        }
+    }
+
+    @POST
+    @Path("past")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response recordPast(RecordPastRequest request) {
+        currentMember();
+        if (request == null || request.date() == null) {
+            return error(Response.Status.BAD_REQUEST, "date-required");
+        }
+        if (request.venueId() == null) {
+            return error(Response.Status.BAD_REQUEST, "venue-required");
+        }
+        try {
+            Lunch lunch = lunches.recordPast(request.date(), request.venueId());
+            return Response.status(Response.Status.CREATED)
+                    .entity(LunchSummaryJson.of(lunch))
+                    .build();
+        } catch (DateNotPastException e) {
+            return error(Response.Status.BAD_REQUEST, "date-not-past");
+        } catch (VenueNotFoundException e) {
+            throw new NotFoundException(e);
+        } catch (VenueVisitedException e) {
+            return error(Response.Status.CONFLICT, "venue-visited");
         }
     }
 
