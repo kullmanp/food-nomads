@@ -1,6 +1,6 @@
 # Invites
 
-Status: ready-for-agent
+Status: resolved
 
 ## Goal
 
