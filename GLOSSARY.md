@@ -29,7 +29,7 @@ One meetup of the group on a specific date at one Venue.
 _Avoid_: Visit, event, meeting, outing
 
 **Planned Lunch**:
-A Lunch with a date (no time) that has not happened yet. Any Member can plan one, and several can be planned at once. It starts without a Venue; any Member picks one of its Candidate Venues, and can change the pick while it is planned.
+A Lunch with a date (no time) that has not happened yet. There is at most one at a time: any Member can plan one when there is none. It starts without a Venue; any Member picks one of its Candidate Venues, and can change the pick while it is planned. Any Member can move it to another date; that clears its RSVPs. It stays planned after its date until a Member marks it held or cancels it.
 _Avoid_: Upcoming, scheduled, draft
 
 **Held Lunch**:
@@ -39,15 +39,12 @@ _Avoid_: Past, completed, done
 **Cancelled Lunch**:
 A Planned Lunch that any Member called off. It stays visible with its comments, and leaves its Venue and Candidate Venues unvisited.
 
-**Next Lunch**:
-The earliest Planned Lunch.
-
 **Candidate Venue**:
-An unvisited Venue a Member put up for a Planned Lunch. Any Member can add one, and remove one that isn't picked, together with its Votes. A new Planned Lunch has none. A Venue can be a Candidate Venue of several Planned Lunches, but picked for only one at a time.
+An unvisited Venue a Member put up for a Planned Lunch. Any Member can add one, and remove one that isn't picked, together with its Votes. A new Planned Lunch has none.
 _Avoid_: Proposal, option, suggestion
 
 **RSVP**:
-A Member's answer, in or out, about attending a Planned Lunch. A Member who hasn't answered has no RSVP. Conditions ("only if we stay near X") go into a Lunch Comment.
+A Member's answer, in or out, about attending a Planned Lunch. A Member who hasn't answered has no RSVP. Moving the Lunch to another date clears all RSVPs. Conditions ("only if we stay near X") go into a Lunch Comment.
 _Avoid_: Registration, attendance
 
 **Vote**:
