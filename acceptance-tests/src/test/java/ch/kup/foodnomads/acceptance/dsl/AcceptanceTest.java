@@ -16,6 +16,7 @@ public abstract class AcceptanceTest {
     protected MembersDsl members;
     protected VenuesDsl venues;
     protected InvitesDsl invites;
+    protected LunchesDsl lunches;
 
     @BeforeEach
     void setUpDsl() {
@@ -24,8 +25,10 @@ public abstract class AcceptanceTest {
         system = new SystemDsl(driver.system());
         InviteLinks inviteLinks = new InviteLinks();
         members = new MembersDsl(driver.members(), inviteLinks);
-        venues = new VenuesDsl(driver.venues());
+        Aliases venueAliases = new Aliases();
+        venues = new VenuesDsl(driver.venues(), venueAliases);
         invites = new InvitesDsl(driver.invites(), inviteLinks, members);
+        lunches = new LunchesDsl(driver.lunches(), venueAliases, members);
     }
 
     @AfterEach

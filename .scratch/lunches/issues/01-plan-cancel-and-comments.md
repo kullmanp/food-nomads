@@ -1,6 +1,6 @@
 # 01 Plan, cancel and talk over a Lunch
 
-Status: ready-for-agent
+Status: claimed
 Blocked by: none
 Spec: [../spec.md](../spec.md)
 

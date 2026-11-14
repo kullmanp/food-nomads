@@ -1,6 +1,7 @@
 package ch.kup.foodnomads.acceptance.drivers.api;
 
 import ch.kup.foodnomads.acceptance.drivers.InviteDriver;
+import ch.kup.foodnomads.acceptance.drivers.LunchDriver;
 import ch.kup.foodnomads.acceptance.drivers.MemberDriver;
 import ch.kup.foodnomads.acceptance.drivers.ProtocolDriver;
 import ch.kup.foodnomads.acceptance.drivers.SystemDriver;
@@ -34,6 +35,11 @@ public class ApiProtocolDriver implements ProtocolDriver {
     @Override
     public InviteDriver invites() {
         return new ApiInviteDriver(api);
+    }
+
+    @Override
+    public LunchDriver lunches() {
+        return new ApiLunchDriver(api);
     }
 
     @Override

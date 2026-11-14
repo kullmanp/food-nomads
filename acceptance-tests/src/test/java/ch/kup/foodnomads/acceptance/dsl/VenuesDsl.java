@@ -9,10 +9,12 @@ import ch.kup.foodnomads.acceptance.drivers.VenueDriver;
 public class VenuesDsl {
 
     private final VenueDriver driver;
-    private final Aliases aliases = new Aliases();
+    private final Aliases aliases;
 
-    VenuesDsl(VenueDriver driver) {
+    /** @param aliases the Venue aliases, shared with {@link LunchesDsl} */
+    VenuesDsl(VenueDriver driver, Aliases aliases) {
         this.driver = driver;
+        this.aliases = aliases;
     }
 
     /**

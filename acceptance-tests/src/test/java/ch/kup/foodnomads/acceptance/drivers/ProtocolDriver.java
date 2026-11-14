@@ -19,6 +19,8 @@ public interface ProtocolDriver extends AutoCloseable {
 
     InviteDriver invites();
 
+    LunchDriver lunches();
+
     @Override
     void close();
 
