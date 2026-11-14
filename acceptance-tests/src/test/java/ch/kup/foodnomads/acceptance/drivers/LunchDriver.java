@@ -70,6 +70,18 @@ public interface LunchDriver {
     void assertCandidates(String lunchId, Set<String> venues, Set<String> visited);
 
     /**
+     * Votes {@code up} or {@code down} on the Candidate Venue with this name of the Lunch with this
+     * id, as the logged-in Member, and fails unless it was accepted.
+     */
+    void vote(String lunchId, String venue, String direction);
+
+    /** Withdraws the logged-in Member's Vote on the Candidate Venue with this name, and fails unless it was accepted. */
+    void withdrawVote(String lunchId, String venue);
+
+    /** Fails unless the Candidate Venue with this name of the Lunch with this id shows these numbers of Votes. */
+    void assertVotes(String lunchId, String venue, int up, int down);
+
+    /**
      * Fails unless this driver, with no Member logged in, is kept away from the Lunches: the UI
      * sends it to login, the API answers 401.
      */

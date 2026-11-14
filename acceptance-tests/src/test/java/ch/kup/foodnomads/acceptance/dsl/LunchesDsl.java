@@ -173,6 +173,41 @@ public class LunchesDsl {
                 idOf(params.value("lunch")), venueNames(params.value("venues")), venueNames(params.value("visited")));
     }
 
+    /**
+     * Votes {@code direction} ({@code up} or {@code down}) on the Candidate Venue {@code venue} of
+     * {@code lunch}, as the logged-in Member.
+     */
+    public void vote(String... args) {
+        Params params =
+                Params.parse(args, Params.required("lunch"), Params.required("venue"), Params.required("direction"));
+        String direction = params.value("direction");
+        if (!"up".equals(direction) && !"down".equals(direction)) {
+            throw new IllegalArgumentException("Unknown direction '" + direction + "', expected up or down");
+        }
+        driver.vote(idOf(params.value("lunch")), venueAliases.realName(params.value("venue")), direction);
+    }
+
+    /** Withdraws the logged-in Member's Vote on the Candidate Venue {@code venue} of {@code lunch}. */
+    public void withdrawVote(String... args) {
+        Params params = Params.parse(args, Params.required("lunch"), Params.required("venue"));
+        driver.withdrawVote(idOf(params.value("lunch")), venueAliases.realName(params.value("venue")));
+    }
+
+    /** Fails unless the Candidate Venue {@code venue} of {@code lunch} shows {@code up} and {@code down} Votes. */
+    public void assertVotes(String... args) {
+        Params params = Params.parse(
+                args,
+                Params.required("lunch"),
+                Params.required("venue"),
+                Params.required("up"),
+                Params.required("down"));
+        driver.assertVotes(
+                idOf(params.value("lunch")),
+                venueAliases.realName(params.value("venue")),
+                Integer.parseInt(params.value("up")),
+                Integer.parseInt(params.value("down")));
+    }
+
     /** Fails unless the Lunches are refused to someone who isn't logged in. */
     public void assertNotAccessibleWithoutLogin() {
         driver.assertNotAccessibleWithoutLogin();

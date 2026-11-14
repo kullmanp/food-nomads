@@ -1,6 +1,6 @@
 # 04 Votes
 
-Status: ready-for-agent
+Status: claimed
 Blocked by: 03
 Spec: [../spec.md](../spec.md)
 
