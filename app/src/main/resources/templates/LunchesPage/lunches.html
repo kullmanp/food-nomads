@@ -1,0 +1,46 @@
+{#include layout}
+{#title}{msg:lunches_title}{/title}
+<main id="lunches">
+    <h1>{msg:lunches_title}</h1>
+
+    {#if planned}
+    {#if draft.error == 'already-planned'}
+    <p id="plan-already-planned" role="alert">{msg:lunches_already_planned}</p>
+    {/if}
+    <a id="planned-lunch" class="lunch-card" href="/lunches/{planned.id}">
+        <span class="lunch-label">{msg:lunches_planned}</span>
+        <time class="lunch-date" datetime="{planned.date}">{planned.dateOn}</time>
+        <span class="lunch-venue no-venue">{msg:lunch_no_venue}</span>
+    </a>
+    {#else}
+    <form id="plan-form" class="stack" method="post" action="/lunches" novalidate>
+        <h2>{msg:lunches_plan_title}</h2>
+        <label for="lunch-date">{msg:lunches_date}</label>
+        <input id="lunch-date" name="date" type="date" min="{today}" value="{draft.date}" required>
+        {#if draft.error == 'date-in-past'}
+        <p id="plan-date-in-past" role="alert">{msg:lunches_date_in_past}</p>
+        {#else if draft.error == 'date-required'}
+        <p id="plan-date-required" role="alert">{msg:lunches_date_required}</p>
+        {/if}
+        <button id="plan-button" class="solid" type="submit">{msg:lunches_plan}</button>
+    </form>
+    {/if}
+
+    <h2>{msg:lunches_earlier}</h2>
+    {#if others.isEmpty}
+    <p id="no-earlier-lunches">{msg:lunches_none}</p>
+    {#else}
+    <ul id="earlier-lunches">
+        {#for lunch in others}
+        <li class="lunch">
+            <a class="lunch-link" href="/lunches/{lunch.id}">
+                <time class="lunch-date" datetime="{lunch.date}">{lunch.dateOn}</time>
+            </a>
+            <span class="lunch-state" data-state="{lunch.state}">{#if lunch.state == 'cancelled'}{msg:lunch_state_cancelled}{/if}</span>
+        </li>
+        {/for}
+    </ul>
+    {/if}
+</main>
+{#tabs current="lunches" /}
+{/include}

@@ -7,15 +7,15 @@ import java.time.ZoneId;
 import java.time.ZoneOffset;
 
 /** A {@link Clock} for unit tests that only moves when told to. */
-final class MutableClock extends Clock {
+public final class MutableClock extends Clock {
 
     private Instant now;
 
-    MutableClock(Instant now) {
+    public MutableClock(Instant now) {
         this.now = now;
     }
 
-    void advance(Duration duration) {
+    public void advance(Duration duration) {
         now = now.plus(duration);
     }
 

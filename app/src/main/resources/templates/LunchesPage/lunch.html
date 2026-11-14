@@ -1,0 +1,41 @@
+{#include layout}
+{#title}{msg:lunch_title}{/title}
+<main id="lunch">
+    <a id="back-to-lunches" class="back" href="/lunches">{msg:lunches_title}</a>
+    <h1><time id="lunch-date" datetime="{lunch.date}">{lunch.dateOn}</time></h1>
+    <p id="lunch-state" data-state="{lunch.state}">{#if lunch.planned}{msg:lunch_state_planned}{#else}{msg:lunch_state_cancelled}{/if}</p>
+    <p id="lunch-no-venue">{msg:lunch_no_venue}</p>
+
+    {#if lunch.planned}
+    <form id="cancel-lunch-form" method="post" action="/lunches/{lunch.id}/cancel"
+          data-confirm="{msg:lunch_cancel_confirm}" onsubmit="return confirm(this.dataset.confirm)">
+        <button id="cancel-lunch-button" class="text-button cancel-lunch" type="submit">{msg:lunch_cancel}</button>
+    </form>
+    {/if}
+
+    <h2>{msg:lunch_chat}</h2>
+    {#if comments.isEmpty}
+    <p id="no-lunch-comments">{msg:lunch_no_comments}</p>
+    {#else}
+    <ol id="lunch-comments">
+        {#for comment in comments}
+        <li class="lunch-comment">
+            <p class="comment-meta"><span class="comment-author">{comment.author}</span>,
+                <time datetime="{comment.writtenAt}">{comment.writtenOn}</time></p>
+            <p class="comment-text">{comment.text}</p>
+        </li>
+        {/for}
+    </ol>
+    {/if}
+
+    <form id="comment-form" class="stack" method="post" action="/lunches/{lunch.id}/comments" novalidate>
+        <label for="comment-text">{msg:lunch_comment}</label>
+        <textarea id="comment-text" name="text" rows="3" maxlength="2000">{draft.text}</textarea>
+        {#if draft.rejected}
+        <p id="comment-error" role="alert">{msg:lunch_comment_required}</p>
+        {/if}
+        <button id="comment-button" class="solid" type="submit">{msg:lunch_comment_send}</button>
+    </form>
+</main>
+{#tabs current="lunches" /}
+{/include}

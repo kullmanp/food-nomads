@@ -11,6 +11,15 @@
     </header>
     <p class="poster">{msg:home_placeholder}</p>
     {#if currentMember}
+    {#if plannedLunch}
+    <a id="planned-lunch" class="lunch-card" href="/lunches/{plannedLunch.id}">
+        <span class="lunch-label">{msg:home_next_lunch}</span>
+        <time class="lunch-date" datetime="{plannedLunch.date}">{plannedLunch.dateOn}</time>
+        <span class="lunch-venue no-venue">{msg:lunch_no_venue}</span>
+    </a>
+    {#else}
+    <a id="plan-lunch-link" class="solid" href="/lunches">{msg:home_plan_lunch}</a>
+    {/if}
     <p>{msg:home_logged_in_as}: <span id="current-member">{currentMember}</span></p>
     {#else}
     <a id="log-in-link" class="solid" href="/login">{msg:home_log_in}</a>

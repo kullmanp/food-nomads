@@ -1,11 +1,18 @@
 package ch.kup.foodnomads.acceptance.drivers.ui;
 
+import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
+
 import ch.kup.foodnomads.acceptance.drivers.LunchDriver;
+import com.microsoft.playwright.Dialog;
+import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
 import java.net.URI;
 import java.time.LocalDate;
+import java.util.regex.Pattern;
 
 class UiLunchDriver implements LunchDriver {
+
+    private static final Pattern LUNCH_PAGE = Pattern.compile(".*/lunches/([0-9a-f-]{36})$");
 
     private final Page page;
     private final URI baseUrl;
@@ -17,60 +24,155 @@ class UiLunchDriver implements LunchDriver {
 
     @Override
     public String plan(LocalDate date) {
-        throw new UnsupportedOperationException("Not implemented yet: plans a Lunch on the lunches page");
+        submitPlan(date);
+
+        page.waitForURL(LUNCH_PAGE);
+        assertThat(page.locator("main#lunch")).isVisible();
+        var matcher = LUNCH_PAGE.matcher(page.url());
+        if (!matcher.matches()) {
+            throw new AssertionError("Not on a Lunch page: " + page.url());
+        }
+        return matcher.group(1);
     }
 
     @Override
     public void assertPlanRejectedAsInThePast(LocalDate date) {
-        throw new UnsupportedOperationException(
-                "Not implemented yet: planning before today is refused on the lunches page");
+        submitPlan(date);
+
+        assertThat(page.locator("#plan-date-in-past")).isVisible();
+        assertThat(page.locator("main#lunch")).not().isAttached();
     }
 
+    /** The page offers no form while a Lunch is planned, but shows that one instead. */
     @Override
     public void assertPlanRejectedAsAlreadyPlanned(LocalDate date) {
-        throw new UnsupportedOperationException(
-                "Not implemented yet: only one Lunch is planned at a time on the lunches page");
+        page.navigate(baseUrl.resolve("lunches").toString());
+
+        assertThat(page.locator("#planned-lunch")).isVisible();
+        assertThat(page.locator("#plan-form")).not().isAttached();
     }
 
     @Override
     public void cancelPlannedLunch() {
-        throw new UnsupportedOperationException(
-                "Not implemented yet: the Planned Lunch can be cancelled on the lunches page");
+        page.navigate(baseUrl.resolve("lunches").toString());
+        assertThat(page.locator("main#lunches")).isVisible();
+        if (page.locator("#planned-lunch").count() == 0) {
+            return;
+        }
+        page.locator("#planned-lunch").click();
+        cancelOnLunchPage();
     }
 
     @Override
     public void assertPlanned(String lunchId, LocalDate date, String venue) {
-        throw new UnsupportedOperationException("Not implemented yet: the Planned Lunch is shown on the lunches page");
+        page.navigate(baseUrl.toString());
+
+        Locator planned = page.locator("#planned-lunch");
+        assertThat(planned).hasAttribute("href", "/lunches/" + lunchId);
+        assertThat(planned.locator(".lunch-date")).hasAttribute("datetime", date.toString());
+        assertVenue(planned.locator(".lunch-venue"), venue);
+
+        planned.click();
+        assertThat(page.locator("#lunch-date")).hasAttribute("datetime", date.toString());
+        assertThat(page.locator("#lunch-state")).hasAttribute("data-state", "planned");
+        if (venue == null) {
+            assertThat(page.locator("#lunch-no-venue")).isVisible();
+        } else {
+            assertThat(page.locator("#lunch-venue")).hasText(venue);
+        }
     }
 
     @Override
     public void cancel(String lunchId) {
-        throw new UnsupportedOperationException("Not implemented yet: a Lunch can be cancelled on the lunches page");
+        page.navigate(lunchPage(lunchId));
+        cancelOnLunchPage();
     }
 
     @Override
     public void assertCancelled(String lunchId) {
-        throw new UnsupportedOperationException(
-                "Not implemented yet: Cancelled Lunches are listed on the lunches page");
+        page.navigate(baseUrl.resolve("lunches").toString());
+
+        Locator listed = page.locator("#earlier-lunches .lunch:has(.lunch-link[href='/lunches/" + lunchId + "'])");
+        assertThat(listed.locator(".lunch-state")).hasAttribute("data-state", "cancelled");
+
+        listed.locator(".lunch-link").click();
+        assertThat(page.locator("#lunch-state")).hasAttribute("data-state", "cancelled");
+        assertThat(page.locator("#cancel-lunch-button")).not().isAttached();
     }
 
     @Override
     public void comment(String lunchId, String text) {
-        throw new UnsupportedOperationException("Not implemented yet: a Lunch takes comments on the lunches page");
+        submitComment(lunchId, text);
+
+        assertThat(page.locator("#comment-error")).not().isAttached();
+        assertThat(page.locator("#comment-text")).hasValue("");
     }
 
     @Override
     public void assertCommentRejectedAsBlank(String lunchId, String text) {
-        throw new UnsupportedOperationException("Not implemented yet: a blank comment is refused on the lunches page");
+        submitComment(lunchId, text);
+
+        assertThat(page.locator("#comment-error")).isVisible();
+        assertThat(page.locator(".lunch-comment")).hasCount(0);
     }
 
     @Override
     public void assertComment(String lunchId, String author, String text) {
-        throw new UnsupportedOperationException("Not implemented yet: a Lunch shows its comments on the lunches page");
+        page.navigate(lunchPage(lunchId));
+
+        Locator comment = page.locator("#lunch-comments .lunch-comment")
+                .filter(new Locator.FilterOptions().setHas(exactly(".comment-author", author)))
+                .filter(new Locator.FilterOptions().setHas(exactly(".comment-text", text)));
+        assertThat(comment).hasCount(1);
+        assertThat(comment.locator("time")).isVisible();
     }
 
     @Override
     public void assertNotAccessibleWithoutLogin() {
-        throw new UnsupportedOperationException("Not implemented yet: the Lunches need a login on the lunches page");
+        page.navigate(baseUrl.resolve("lunches").toString());
+
+        assertThat(page).hasURL(Pattern.compile(".*/login$"));
+        assertThat(page.locator("main#login")).isVisible();
+        assertThat(page.locator("main#lunches")).not().isAttached();
+    }
+
+    private void submitPlan(LocalDate date) {
+        page.navigate(baseUrl.toString());
+        page.locator("#lunches-link").click();
+        page.locator("#lunch-date").fill(date.toString());
+        page.locator("#plan-button").click();
+    }
+
+    private void submitComment(String lunchId, String text) {
+        page.navigate(lunchPage(lunchId));
+        page.locator("#comment-text").fill(text);
+        page.waitForResponse(
+                r -> r.url().endsWith("/lunches/" + lunchId + "/comments")
+                        && "POST".equals(r.request().method()),
+                () -> page.locator("#comment-button").click());
+    }
+
+    /** Cancels the Lunch on the page shown, answering yes when asked to confirm. */
+    private void cancelOnLunchPage() {
+        page.onceDialog(Dialog::accept);
+        page.locator("#cancel-lunch-button").click();
+
+        assertThat(page.locator("#lunch-state")).hasAttribute("data-state", "cancelled");
+    }
+
+    private void assertVenue(Locator shown, String venue) {
+        if (venue == null) {
+            assertThat(shown).hasClass(Pattern.compile("\\bno-venue\\b"));
+        } else {
+            assertThat(shown).hasText(venue);
+        }
+    }
+
+    private Locator exactly(String selector, String text) {
+        return page.locator(selector).getByText(text, new Locator.GetByTextOptions().setExact(true));
+    }
+
+    private String lunchPage(String lunchId) {
+        return baseUrl.resolve("lunches/" + lunchId).toString();
     }
 }

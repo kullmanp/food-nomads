@@ -20,6 +20,9 @@ public interface Messages {
     String nav_invite();
 
     @Message
+    String nav_lunches();
+
+    @Message
     String sheet_close();
 
     @Message
@@ -39,6 +42,12 @@ public interface Messages {
 
     @Message
     String home_invites();
+
+    @Message
+    String home_next_lunch();
+
+    @Message
+    String home_plan_lunch();
 
     @Message
     String login_title();
@@ -114,6 +123,69 @@ public interface Messages {
 
     @Message
     String invites_revoke();
+
+    @Message
+    String lunches_title();
+
+    @Message
+    String lunches_planned();
+
+    @Message
+    String lunches_plan_title();
+
+    @Message
+    String lunches_date();
+
+    @Message
+    String lunches_plan();
+
+    @Message
+    String lunches_date_required();
+
+    @Message
+    String lunches_date_in_past();
+
+    @Message
+    String lunches_already_planned();
+
+    @Message
+    String lunches_earlier();
+
+    @Message
+    String lunches_none();
+
+    @Message
+    String lunch_title();
+
+    @Message
+    String lunch_state_planned();
+
+    @Message
+    String lunch_state_cancelled();
+
+    @Message
+    String lunch_no_venue();
+
+    @Message
+    String lunch_cancel();
+
+    @Message
+    String lunch_cancel_confirm();
+
+    @Message
+    String lunch_chat();
+
+    @Message
+    String lunch_no_comments();
+
+    @Message
+    String lunch_comment();
+
+    @Message
+    String lunch_comment_send();
+
+    @Message
+    String lunch_comment_required();
 
     @Message
     String join_title();

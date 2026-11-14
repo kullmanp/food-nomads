@@ -63,6 +63,18 @@ class ArchitectureTest {
     }
 
     @Test
+    void venuesDoNotKnowTheLunches() {
+        noClasses()
+                .that()
+                .resideInAPackage("ch.kup.foodnomads.venues..")
+                .should()
+                .dependOnClassesThat()
+                .resideInAPackage("ch.kup.foodnomads.lunches..")
+                .because("lunches depend on venues, never the reverse: visited is derived from the Lunches")
+                .check(CLASSES);
+    }
+
+    @Test
     void adaptersDoNotUseRepositories() {
         noClasses()
                 .that()

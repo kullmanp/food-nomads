@@ -1,6 +1,6 @@
 package ch.kup.foodnomads.web;
 
-import ch.kup.foodnomads.members.Member;
+import ch.kup.foodnomads.lunches.Lunches;
 import ch.kup.foodnomads.members.Membership;
 import io.quarkus.qute.CheckedTemplate;
 import io.quarkus.qute.TemplateInstance;
@@ -16,7 +16,11 @@ public class HomePage {
 
     @CheckedTemplate
     static class Templates {
-        static native TemplateInstance home(String currentMember);
+        /**
+         * @param currentMember the logged-in Member's display name, or null for a visitor
+         * @param plannedLunch the Planned Lunch, or null if there is none or nobody is logged in
+         */
+        static native TemplateInstance home(String currentMember, LunchesPage.LunchRow plannedLunch);
     }
 
     @Inject
@@ -25,10 +29,18 @@ public class HomePage {
     @Inject
     SecurityIdentity identity;
 
+    @Inject
+    Lunches lunches;
+
     @GET
     @Produces(MediaType.TEXT_HTML)
     public TemplateInstance get() {
+        var member = membership.current(identity);
+        if (member.isEmpty()) {
+            return Templates.home(null, null);
+        }
         return Templates.home(
-                membership.current(identity).map(Member::displayName).orElse(null));
+                member.get().displayName(),
+                lunches.planned().map(LunchesPage.LunchRow::of).orElse(null));
     }
 }

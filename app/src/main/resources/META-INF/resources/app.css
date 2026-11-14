@@ -33,10 +33,11 @@ main > p { margin: 0.875rem var(--gutter) 1.125rem; font-size: 1.0625rem; }
 main > [role=alert] { font-weight: 800; }
 [role=alert] { margin: 0; color: var(--alert); }
 
-button, input { font: inherit; color: inherit; }
+button, input, textarea { font: inherit; color: inherit; }
 button { min-height: 2.75rem; cursor: pointer; }
 label { font-size: 0.9375rem; font-weight: 500; }
 input { height: 3.375rem; padding: 0 0.75rem; border: 2px solid var(--ink); border-radius: 0; background: var(--paper); font-size: 1.125rem; }
+textarea { padding: 0.625rem 0.75rem; border: 2px solid var(--ink); border-radius: 0; background: var(--paper); font-size: 1.125rem; resize: vertical; }
 
 .solid {
     display: flex;
@@ -76,7 +77,7 @@ main > .solid { width: auto; margin: 0 var(--gutter) 1.25rem; }
     bottom: 0;
     z-index: 10;
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     padding-bottom: var(--safe-bottom);
     border-top: 2px solid var(--ink);
     background: var(--paper);
@@ -188,3 +189,39 @@ main > .poster {
 .open-invite-actions button { padding: 0; border: 0; background: none; font-weight: 800; }
 .open-invite-actions form { margin: 0 0 0 auto; }
 .revoke-invite { color: var(--alert); }
+
+/* Lunches */
+.lunch-card {
+    display: grid;
+    gap: 0.25rem;
+    margin: 1.25rem var(--gutter);
+    padding: var(--gutter);
+    background: var(--ink);
+    color: var(--paper);
+    text-decoration: none;
+}
+.lunch-label { font-size: 0.9375rem; font-weight: 500; }
+.lunch-card .lunch-date { font-size: 2.5rem; font-weight: 800; line-height: 1.05; letter-spacing: -0.03em; }
+.lunch-venue { font-size: 1.0625rem; }
+#home > .lunch-card + p, #home > .solid + p { margin-top: 0; }
+#lunches .stack h2 { margin: 0.5rem 0; font-size: 2rem; font-weight: 800; letter-spacing: -0.025em; }
+#earlier-lunches { margin: 0; padding: 0; border-top: 2px solid var(--ink); list-style: none; }
+#earlier-lunches .lunch {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    padding: 0.75rem var(--gutter);
+    border-bottom: 1px solid var(--ink);
+}
+.lunch-link { color: var(--ink); font-size: 1.5rem; font-weight: 800; letter-spacing: -0.02em; }
+.lunch-state { font-size: 0.9375rem; font-weight: 500; }
+.back { margin: 1rem var(--gutter) 0; color: var(--ink); font-weight: 500; }
+#lunch > h1 { font-size: 3.5rem; }
+#lunch > form:not(.stack) { margin: 0 var(--gutter); }
+.cancel-lunch { color: var(--alert); }
+#lunch-comments { margin: 0 0 1.25rem; padding: 0; border-top: 2px solid var(--ink); list-style: none; }
+.lunch-comment { padding: 0.625rem var(--gutter); border-bottom: 1px solid var(--ink); }
+.lunch-comment p { margin: 0; }
+.comment-meta { font-size: 0.875rem; }
+.comment-author { font-weight: 800; }
+.comment-text { white-space: pre-line; }
