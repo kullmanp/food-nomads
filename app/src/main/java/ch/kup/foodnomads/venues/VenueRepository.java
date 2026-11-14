@@ -12,6 +12,8 @@ public interface VenueRepository {
     /** All Venues, newest first, with their proposing Member loaded. */
     List<Venue> newestFirst();
 
+    Optional<Venue> find(UUID id);
+
     /** The Venue, held for this transaction, so that whatever depends on it changes one at a time. */
     Optional<Venue> findForUpdate(UUID id);
 }

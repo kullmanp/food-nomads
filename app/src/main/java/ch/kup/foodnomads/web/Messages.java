@@ -83,7 +83,7 @@ public interface Messages {
     String venues_name_required();
 
     @Message
-    String venues_candidates();
+    String venues_all();
 
     @Message
     String venues_proposed_by();
@@ -201,6 +201,33 @@ public interface Messages {
 
     @Message
     String lunch_cancel_confirm();
+
+    @Message
+    String lunch_candidates();
+
+    @Message
+    String lunch_no_candidates();
+
+    @Message
+    String lunch_candidate_visited();
+
+    @Message
+    String lunch_candidate_remove();
+
+    @Message
+    String lunch_candidate_add_label();
+
+    @Message
+    String lunch_candidate_add();
+
+    @Message
+    String lunch_candidate_venue_visited();
+
+    @Message
+    String lunch_candidate_already();
+
+    @Message
+    String lunch_no_addable_venues();
 
     @Message
     String lunch_chat();

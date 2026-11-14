@@ -9,7 +9,7 @@ import java.util.Optional;
 import java.util.UUID;
 import org.hibernate.exception.ConstraintViolationException;
 
-/** Keeps Lunches and their comments in PostgreSQL. Callers run it inside a transaction. */
+/** Keeps Lunches, their comments and their Candidate Venues in PostgreSQL. Callers run it inside a transaction. */
 @ApplicationScoped
 class PanacheLunchRepository implements LunchRepository {
 
@@ -39,11 +39,17 @@ class PanacheLunchRepository implements LunchRepository {
 
     @Override
     public Optional<Lunch> find(UUID id) {
-        return Lunch.find(
+        Optional<Lunch> lunch = Lunch.<Lunch>find(
                         "from Lunch l left join fetch l.venue left join fetch l.comments c left join fetch c.author"
                                 + " where l.id = ?1",
                         id)
                 .singleResultOptional();
+        // A second query, so that comments and Candidate Venues don't multiply each other. It fills
+        // in the same Lunch, which this transaction already holds.
+        lunch.ifPresent(l -> Lunch.find(
+                        "from Lunch l left join fetch l.candidates c left join fetch c.venue where l.id = ?1", id)
+                .singleResult());
+        return lunch;
     }
 
     @Override
@@ -65,5 +71,15 @@ class PanacheLunchRepository implements LunchRepository {
     public void addComment(LunchComment comment) {
         comment.author = Member.getEntityManager().merge(comment.author);
         comment.persist();
+    }
+
+    @Override
+    public void addCandidate(CandidateVenue candidate) {
+        candidate.persist();
+    }
+
+    @Override
+    public void removeCandidate(CandidateVenue candidate) {
+        candidate.delete();
     }
 }

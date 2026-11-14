@@ -17,6 +17,51 @@
     </form>
     {/if}
 
+    <h2>{msg:lunch_candidates}</h2>
+    {#if candidates.isEmpty}
+    <p id="no-candidate-venues">{msg:lunch_no_candidates}</p>
+    {#else}
+    <ul id="candidate-venues">
+        {#for candidate in candidates}
+        <li class="candidate-venue{#if candidate.visited} visited{/if}">
+            <span class="candidate-name">{candidate.name}</span>
+            {#if candidate.visited}
+            <span class="candidate-visited">{msg:lunch_candidate_visited}</span>
+            {/if}
+            {#if lunch.planned}
+            <form method="post" action="/lunches/{lunch.id}/candidates/{candidate.venueId}/remove">
+                <button class="text-button remove-candidate" type="submit">{msg:lunch_candidate_remove}</button>
+            </form>
+            {/if}
+        </li>
+        {/for}
+    </ul>
+    {/if}
+    {#if candidateDraft.error == 'venue-visited'}
+    <p id="add-candidate-venue-visited" role="alert">{msg:lunch_candidate_venue_visited}</p>
+    {#else if candidateDraft.error == 'already-candidate'}
+    <p id="add-candidate-already-candidate" role="alert">{msg:lunch_candidate_already}</p>
+    {/if}
+    {#if lunch.planned}
+    {#if addable.isEmpty}
+    <p id="no-addable-venues">{msg:lunch_no_addable_venues}</p>
+    {#else}
+    <form id="add-candidate-form" class="stack" method="post" action="/lunches/{lunch.id}/candidates" novalidate>
+        <label for="candidate-venue">{msg:lunch_candidate_add_label}</label>
+        <select id="candidate-venue" name="venue" required>
+            <option value="">{msg:lunches_record_choose_venue}</option>
+            {#for venue in addable}
+            <option value="{venue.id}"{#if candidateDraft.venueId == venue.id} selected{/if}>{venue.name}</option>
+            {/for}
+        </select>
+        {#if candidateDraft.error == 'venue-required'}
+        <p id="add-candidate-venue-required" role="alert">{msg:lunches_record_venue_required}</p>
+        {/if}
+        <button id="add-candidate-button" class="solid" type="submit">{msg:lunch_candidate_add}</button>
+    </form>
+    {/if}
+    {/if}
+
     <h2>{msg:lunch_chat}</h2>
     {#if comments.isEmpty}
     <p id="no-lunch-comments">{msg:lunch_no_comments}</p>

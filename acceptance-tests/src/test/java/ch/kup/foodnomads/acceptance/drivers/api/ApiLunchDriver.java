@@ -9,7 +9,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.net.http.HttpResponse;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 class ApiLunchDriver implements LunchDriver {
@@ -138,22 +140,38 @@ class ApiLunchDriver implements LunchDriver {
 
     @Override
     public void addCandidate(String lunchId, String venue) {
-        throw new UnsupportedOperationException("Not implemented yet");
+        HttpResponse<String> response = api.post(candidatesPath(lunchId), candidateRequest(venue));
+
+        assertEquals(201, response.statusCode(), "POST /api/lunches/{id}/candidates: " + response.body());
     }
 
     @Override
     public void assertAddCandidateRejectedAsVenueVisited(String lunchId, String venue) {
-        throw new UnsupportedOperationException("Not implemented yet");
+        assertRefused(api.post(candidatesPath(lunchId), candidateRequest(venue)), 409, "venue-visited");
+        assertTrue(lunch(lunchId).path("candidates").isEmpty(), "candidates of Lunch " + lunchId);
     }
 
     @Override
     public void removeCandidate(String lunchId, String venue) {
-        throw new UnsupportedOperationException("Not implemented yet");
+        HttpResponse<String> response = api.delete(candidatesPath(lunchId) + "/" + venueId(venue));
+
+        assertEquals(204, response.statusCode(), "DELETE /api/lunches/{id}/candidates/{venueId}: " + response.body());
     }
 
     @Override
     public void assertCandidates(String lunchId, Set<String> venues, Set<String> visited) {
-        throw new UnsupportedOperationException("Not implemented yet");
+        JsonNode candidates = lunch(lunchId).path("candidates");
+        List<String> listed = StreamSupport.stream(candidates.spliterator(), false)
+                .map(candidate -> candidate.path("venue").path("name").asText())
+                .toList();
+        Set<String> listedVisited = StreamSupport.stream(candidates.spliterator(), false)
+                .filter(candidate -> candidate.path("visited").asBoolean())
+                .map(candidate -> candidate.path("venue").path("name").asText())
+                .collect(Collectors.toSet());
+
+        assertEquals(venues.size(), listed.size(), "candidates in " + candidates);
+        assertEquals(venues, Set.copyOf(listed), "candidates in " + candidates);
+        assertEquals(visited, listedVisited, "visited candidates in " + candidates);
     }
 
     @Override
@@ -202,6 +220,14 @@ class ApiLunchDriver implements LunchDriver {
 
     private ObjectNode recordPastRequest(LocalDate date, String venue) {
         return ApiClient.newObject().put("date", date.toString()).put("venueId", venueId(venue));
+    }
+
+    private ObjectNode candidateRequest(String venue) {
+        return ApiClient.newObject().put("venueId", venueId(venue));
+    }
+
+    private static String candidatesPath(String lunchId) {
+        return "api/lunches/" + lunchId + "/candidates";
     }
 
     private static ObjectNode commentRequest(String text) {

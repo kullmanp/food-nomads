@@ -7,7 +7,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
-/** Proposing Venues and listing the candidates. */
+/** Proposing Venues and listing them. */
 @ApplicationScoped
 public class Venues {
 
@@ -41,8 +41,14 @@ public class Venues {
 
     /** All Venues, newest first, with their proposing Member loaded. */
     @Transactional
-    public List<Venue> candidates() {
+    public List<Venue> newestFirst() {
         return repository.newestFirst();
+    }
+
+    /** The Venue with this id, or {@link VenueNotFoundException}. */
+    @Transactional
+    public Venue venue(UUID id) {
+        return repository.find(id).orElseThrow(VenueNotFoundException::new);
     }
 
     /**

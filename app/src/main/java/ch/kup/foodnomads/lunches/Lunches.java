@@ -19,8 +19,9 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
- * Planning and cancelling Lunches, recording the ones from before the app, and talking them over
- * in their Lunch Comments. Which Venues are visited follows from the Held Lunches.
+ * Planning and cancelling Lunches, recording the ones from before the app, putting up Candidate
+ * Venues and talking Lunches over in their Lunch Comments. Which Venues are visited follows from
+ * the Held Lunches.
  */
 @ApplicationScoped
 public class Lunches {
@@ -33,6 +34,11 @@ public class Lunches {
             .thenComparing((Lunch l) -> l.date, Comparator.reverseOrder())
             .thenComparing((Lunch l) -> l.createdAt, Comparator.reverseOrder())
             .thenComparing(l -> l.id);
+
+    /** By name as a German speaker sorts it, then by id, so that equal names keep a stable order. */
+    private static final Comparator<Venue> BY_NAME = Comparator.comparing(
+                    (Venue v) -> v.name, Collator.getInstance(Locale.GERMAN))
+            .thenComparing(v -> v.id);
 
     private final LunchRepository repository;
     private final Venues venues;
@@ -110,12 +116,85 @@ public class Lunches {
     @Transactional
     public List<Venue> unvisitedVenues() {
         Set<UUID> visited = visitedVenueIds();
-        Comparator<Venue> byName = Comparator.comparing((Venue v) -> v.name, Collator.getInstance(Locale.GERMAN))
-                .thenComparing(v -> v.id);
-        return venues.candidates().stream()
+        return venues.newestFirst().stream()
                 .filter(venue -> !visited.contains(venue.id))
-                .sorted(byName)
+                .sorted(BY_NAME)
                 .toList();
+    }
+
+    /**
+     * Puts this Venue up as a Candidate Venue of the Planned Lunch. Fails with
+     * {@link LunchNotPlannedException} for a held or cancelled Lunch, with
+     * {@link VenueNotFoundException} for an unknown Venue, with {@link VenueVisitedException} if a
+     * Lunch has been held there, and with {@link AlreadyCandidateException} if it's up already.
+     */
+    @Transactional
+    public CandidateVenue addCandidate(UUID lunchId, UUID venueId) {
+        Lunch lunch = plannedForUpdate(lunchId);
+        Venue venue = venues.venue(venueId);
+        if (visitedVenueIds().contains(venue.id)) {
+            throw new VenueVisitedException();
+        }
+        if (candidateOf(lunch, venueId).isPresent()) {
+            throw new AlreadyCandidateException();
+        }
+        CandidateVenue candidate = new CandidateVenue();
+        candidate.id = UUID.randomUUID();
+        candidate.lunch = lunch;
+        candidate.venue = venue;
+        lunch.candidates.add(candidate);
+        repository.addCandidate(candidate);
+        return candidate;
+    }
+
+    /**
+     * Takes this Venue off the Planned Lunch's Candidate Venues, also if it has become visited in
+     * the meantime. Fails with {@link LunchNotPlannedException} for a held or cancelled Lunch and
+     * with {@link NotACandidateException} if the Venue isn't up.
+     */
+    @Transactional
+    public void removeCandidate(UUID lunchId, UUID venueId) {
+        Lunch lunch = plannedForUpdate(lunchId);
+        CandidateVenue candidate = candidateOf(lunch, venueId).orElseThrow(NotACandidateException::new);
+        lunch.candidates.remove(candidate);
+        repository.removeCandidate(candidate);
+    }
+
+    /** The Lunch's Candidate Venues by name, each marked visited or not. */
+    @Transactional
+    public List<ListedCandidate> candidates(Lunch lunch) {
+        Set<UUID> visited = visitedVenueIds();
+        return lunch.candidates.stream()
+                .map(candidate -> candidate.venue)
+                .sorted(BY_NAME)
+                .map(venue -> new ListedCandidate(venue, visited.contains(venue.id)))
+                .toList();
+    }
+
+    /** The Venues that can still be put up for this Lunch, by name: none unless it's planned. */
+    @Transactional
+    public List<Venue> addableVenues(Lunch lunch) {
+        if (!lunch.isPlanned()) {
+            return List.of();
+        }
+        return unvisitedVenues().stream()
+                .filter(venue -> candidateOf(lunch, venue.id).isEmpty())
+                .toList();
+    }
+
+    /** The Lunch, held for this transaction, or {@link LunchNotPlannedException} unless it's planned. */
+    private Lunch plannedForUpdate(UUID id) {
+        Lunch lunch = repository.findForUpdate(id).orElseThrow(LunchNotFoundException::new);
+        if (!lunch.isPlanned()) {
+            throw new LunchNotPlannedException();
+        }
+        return lunch;
+    }
+
+    private static Optional<CandidateVenue> candidateOf(Lunch lunch, UUID venueId) {
+        return lunch.candidates.stream()
+                .filter(candidate -> candidate.venue.id.equals(venueId))
+                .findFirst();
     }
 
     /**
@@ -124,11 +203,7 @@ public class Lunches {
      */
     @Transactional
     public void cancel(UUID id) {
-        Lunch lunch = repository.findForUpdate(id).orElseThrow(LunchNotFoundException::new);
-        if (!lunch.isPlanned()) {
-            throw new LunchNotPlannedException();
-        }
-        lunch.state = LunchState.CANCELLED;
+        plannedForUpdate(id).state = LunchState.CANCELLED;
     }
 
     @Transactional
@@ -136,7 +211,10 @@ public class Lunches {
         return repository.planned();
     }
 
-    /** The Lunch with its Venue, comments and their authors loaded, or {@link LunchNotFoundException}. */
+    /**
+     * The Lunch with its Venue, comments and their authors, and Candidate Venues loaded, or
+     * {@link LunchNotFoundException}.
+     */
     @Transactional
     public Lunch lunch(UUID id) {
         return repository.find(id).orElseThrow(LunchNotFoundException::new);

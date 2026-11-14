@@ -48,6 +48,9 @@ public class Lunch extends PanacheEntityBase {
     @OneToMany(mappedBy = "lunch")
     public List<LunchComment> comments = new ArrayList<>();
 
+    @OneToMany(mappedBy = "lunch")
+    public List<CandidateVenue> candidates = new ArrayList<>();
+
     public boolean isPlanned() {
         return state == LunchState.PLANNED;
     }

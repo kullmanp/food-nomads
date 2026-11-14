@@ -51,10 +51,10 @@ class VenuesTest {
     }
 
     @Test
-    void addsTheVenueToTheCandidates() {
+    void listsTheProposedVenue() {
         Venue venue = venues.propose(anna, "Sternen", null);
 
-        assertThat(venues.candidates()).containsExactly(venue);
+        assertThat(venues.newestFirst()).containsExactly(venue);
     }
 
     @Test
@@ -64,6 +64,23 @@ class VenuesTest {
 
         assertThat(venues.lock(sternen.id)).isSameAs(sternen);
         assertThat(repository.locked()).containsExactly(sternen.id);
+    }
+
+    @Test
+    void findsAVenueByItsIdWithoutLockingIt() {
+        venues.propose(anna, "Rössli", null);
+        Venue sternen = venues.propose(anna, "Sternen", null);
+
+        assertThat(venues.venue(sternen.id)).isSameAs(sternen);
+        assertThat(repository.locked()).isEmpty();
+    }
+
+    @Test
+    void anUnknownVenueIsNotFound() {
+        venues.propose(anna, "Sternen", null);
+        UUID unknown = UUID.randomUUID();
+
+        assertThatExceptionOfType(VenueNotFoundException.class).isThrownBy(() -> venues.venue(unknown));
     }
 
     @Test

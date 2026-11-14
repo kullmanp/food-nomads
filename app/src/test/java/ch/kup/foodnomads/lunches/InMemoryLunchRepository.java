@@ -10,6 +10,8 @@ class InMemoryLunchRepository implements LunchRepository {
 
     private final List<Lunch> lunches = new ArrayList<>();
     private final List<LunchComment> comments = new ArrayList<>();
+    private final List<CandidateVenue> candidates = new ArrayList<>();
+    private final List<UUID> locked = new ArrayList<>();
 
     @Override
     public void add(Lunch lunch) {
@@ -23,6 +25,7 @@ class InMemoryLunchRepository implements LunchRepository {
 
     @Override
     public Optional<Lunch> findForUpdate(UUID id) {
+        locked.add(id);
         return find(id);
     }
 
@@ -41,7 +44,26 @@ class InMemoryLunchRepository implements LunchRepository {
         comments.add(comment);
     }
 
+    @Override
+    public void addCandidate(CandidateVenue candidate) {
+        candidates.add(candidate);
+    }
+
+    @Override
+    public void removeCandidate(CandidateVenue candidate) {
+        candidates.remove(candidate);
+    }
+
     List<LunchComment> comments() {
         return List.copyOf(comments);
+    }
+
+    List<CandidateVenue> candidates() {
+        return List.copyOf(candidates);
+    }
+
+    /** The ids {@link #findForUpdate} was asked for, in order. */
+    List<UUID> locked() {
+        return List.copyOf(locked);
     }
 }

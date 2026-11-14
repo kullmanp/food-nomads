@@ -167,22 +167,49 @@ class UiLunchDriver implements LunchDriver {
 
     @Override
     public void addCandidate(String lunchId, String venue) {
-        throw new UnsupportedOperationException("Not implemented yet");
+        page.navigate(lunchPage(lunchId));
+        page.locator("#candidate-venue").selectOption(new SelectOption().setLabel(venue));
+        page.locator("#add-candidate-button").click();
+
+        assertThat(page.locator("main#lunch")).isVisible();
+        assertThat(candidate(venue)).hasCount(1);
     }
 
+    /** The form only offers unvisited Venues, so a Visited Venue can't be chosen at all. */
     @Override
     public void assertAddCandidateRejectedAsVenueVisited(String lunchId, String venue) {
-        throw new UnsupportedOperationException("Not implemented yet");
+        page.navigate(lunchPage(lunchId));
+        assertThat(page.locator("main#lunch")).isVisible();
+        assertThat(page.locator("#lunch-state")).hasAttribute("data-state", "planned");
+
+        assertThat(page.locator("#candidate-venue option").filter(new Locator.FilterOptions().setHasText(venue)))
+                .hasCount(0);
+        assertThat(candidate(venue)).hasCount(0);
     }
 
     @Override
     public void removeCandidate(String lunchId, String venue) {
-        throw new UnsupportedOperationException("Not implemented yet");
+        page.navigate(lunchPage(lunchId));
+        candidate(venue).locator(".remove-candidate").click();
+
+        assertThat(page.locator("main#lunch")).isVisible();
+        assertThat(candidate(venue)).hasCount(0);
     }
 
     @Override
     public void assertCandidates(String lunchId, Set<String> venues, Set<String> visited) {
-        throw new UnsupportedOperationException("Not implemented yet");
+        page.navigate(lunchPage(lunchId));
+
+        assertThat(page.locator("#candidate-venues .candidate-venue")).hasCount(venues.size());
+        for (String venue : venues) {
+            Locator candidate = candidate(venue);
+            assertThat(candidate).hasCount(1);
+            if (visited.contains(venue)) {
+                assertThat(candidate.locator(".candidate-visited")).isVisible();
+            } else {
+                assertThat(candidate.locator(".candidate-visited")).not().isAttached();
+            }
+        }
     }
 
     @Override
@@ -235,6 +262,12 @@ class UiLunchDriver implements LunchDriver {
         page.locator("#cancel-lunch-button").click();
 
         assertThat(page.locator("#lunch-state")).hasAttribute("data-state", "cancelled");
+    }
+
+    /** The Candidate Venue with this name on the Lunch page shown. */
+    private Locator candidate(String venue) {
+        return page.locator("#candidate-venues .candidate-venue")
+                .filter(new Locator.FilterOptions().setHas(exactly(".candidate-name", venue)));
     }
 
     private void assertVenue(Locator shown, String venue) {

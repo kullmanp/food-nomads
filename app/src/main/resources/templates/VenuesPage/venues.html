@@ -8,22 +8,22 @@
 <main id="venues">
     <h1>{msg:venues_title}</h1>
 
-    <h2>{msg:venues_candidates}</h2>
-    {#if candidates.isEmpty}
+    <h2>{msg:venues_all}</h2>
+    {#if venues.isEmpty}
     <p id="no-venues">{msg:venues_empty}</p>
     {#else}
-    <ul id="candidates">
-        {#for candidate in candidates}
-        <li class="candidate{#if candidate.visited} visited{/if}">
-            <h3 class="venue-name">{candidate.name}</h3>
-            {#if candidate.visited}
+    <ul id="venue-list">
+        {#for venue in venues}
+        <li class="venue{#if venue.visited} visited{/if}">
+            <h3 class="venue-name">{venue.name}</h3>
+            {#if venue.visited}
             <p class="venue-visited">{msg:venues_visited}</p>
             {/if}
-            {#if candidate.address}
-            <p class="venue-address">{candidate.address}</p>
+            {#if venue.address}
+            <p class="venue-address">{venue.address}</p>
             {/if}
-            <p>{msg:venues_proposed_by} <span class="venue-proposed-by">{candidate.proposedBy}</span>,
-                <time datetime="{candidate.proposedAt}">{candidate.proposedOn}</time></p>
+            <p>{msg:venues_proposed_by} <span class="venue-proposed-by">{venue.proposedBy}</span>,
+                <time datetime="{venue.proposedAt}">{venue.proposedOn}</time></p>
         </li>
         {/for}
     </ul>

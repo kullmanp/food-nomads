@@ -1,14 +1,18 @@
 package ch.kup.foodnomads.api;
 
+import ch.kup.foodnomads.lunches.AlreadyCandidateException;
+import ch.kup.foodnomads.lunches.CandidateVenue;
 import ch.kup.foodnomads.lunches.CommentTextRequiredException;
 import ch.kup.foodnomads.lunches.DateInPastException;
 import ch.kup.foodnomads.lunches.DateNotPastException;
+import ch.kup.foodnomads.lunches.ListedCandidate;
 import ch.kup.foodnomads.lunches.Lunch;
 import ch.kup.foodnomads.lunches.LunchAlreadyPlannedException;
 import ch.kup.foodnomads.lunches.LunchComment;
 import ch.kup.foodnomads.lunches.LunchNotFoundException;
 import ch.kup.foodnomads.lunches.LunchNotPlannedException;
 import ch.kup.foodnomads.lunches.Lunches;
+import ch.kup.foodnomads.lunches.NotACandidateException;
 import ch.kup.foodnomads.lunches.VenueVisitedException;
 import ch.kup.foodnomads.members.Member;
 import ch.kup.foodnomads.members.Membership;
@@ -17,6 +21,7 @@ import ch.kup.foodnomads.venues.VenueNotFoundException;
 import io.quarkus.security.identity.SecurityIdentity;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotAuthorizedException;
 import jakarta.ws.rs.NotFoundException;
@@ -33,7 +38,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
-/** Planning and cancelling Lunches, recording past ones, and their Lunch Comments. */
+/** Planning and cancelling Lunches, recording past ones, their Candidate Venues and their Lunch Comments. */
 @Path("/api/lunches")
 @Produces(MediaType.APPLICATION_JSON)
 public class LunchesResource {
@@ -52,14 +57,28 @@ public class LunchesResource {
         }
     }
 
-    public record LunchDetailJson(UUID id, LocalDate date, String state, VenueJson venue, List<CommentJson> comments) {
-        static LunchDetailJson of(Lunch lunch) {
+    public record LunchDetailJson(
+            UUID id,
+            LocalDate date,
+            String state,
+            VenueJson venue,
+            List<CandidateJson> candidates,
+            List<CommentJson> comments) {
+        static LunchDetailJson of(Lunch lunch, List<ListedCandidate> candidates) {
             return new LunchDetailJson(
                     lunch.id,
                     lunch.date,
                     stateOf(lunch),
                     VenueJson.of(lunch.venue),
+                    candidates.stream().map(CandidateJson::of).toList(),
                     lunch.chat().stream().map(CommentJson::of).toList());
+        }
+    }
+
+    /** A Candidate Venue. {@code visited} once a Lunch has been held there after it was put up. */
+    public record CandidateJson(VenueJson venue, boolean visited) {
+        static CandidateJson of(ListedCandidate candidate) {
+            return new CandidateJson(VenueJson.of(candidate.venue()), candidate.visited());
         }
     }
 
@@ -74,6 +93,8 @@ public class LunchesResource {
     public record RecordPastRequest(LocalDate date, UUID venueId) {}
 
     public record CommentRequest(String text) {}
+
+    public record CandidateRequest(UUID venueId) {}
 
     @Inject
     Lunches lunches;
@@ -101,7 +122,8 @@ public class LunchesResource {
     @Path("{id}")
     public LunchDetailJson lunch(@PathParam("id") UUID id) {
         try {
-            return LunchDetailJson.of(lunches.lunch(id));
+            Lunch lunch = lunches.lunch(id);
+            return LunchDetailJson.of(lunch, lunches.candidates(lunch));
         } catch (LunchNotFoundException e) {
             throw new NotFoundException(e);
         }
@@ -179,6 +201,46 @@ public class LunchesResource {
             throw new NotFoundException(e);
         } catch (CommentTextRequiredException e) {
             return error(Response.Status.BAD_REQUEST, "text-required");
+        }
+    }
+
+    @POST
+    @Path("{id}/candidates")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response addCandidate(@PathParam("id") UUID id, CandidateRequest request) {
+        currentMember();
+        if (request == null || request.venueId() == null) {
+            return error(Response.Status.BAD_REQUEST, "venue-required");
+        }
+        try {
+            CandidateVenue candidate = lunches.addCandidate(id, request.venueId());
+            return Response.status(Response.Status.CREATED)
+                    .entity(new CandidateJson(VenueJson.of(candidate.venue), false))
+                    .build();
+        } catch (LunchNotFoundException | VenueNotFoundException e) {
+            throw new NotFoundException(e);
+        } catch (LunchNotPlannedException e) {
+            return error(Response.Status.CONFLICT, "lunch-not-planned");
+        } catch (VenueVisitedException e) {
+            return error(Response.Status.CONFLICT, "venue-visited");
+        } catch (AlreadyCandidateException e) {
+            return error(Response.Status.CONFLICT, "already-candidate");
+        }
+    }
+
+    @DELETE
+    @Path("{id}/candidates/{venueId}")
+    public Response removeCandidate(@PathParam("id") UUID id, @PathParam("venueId") UUID venueId) {
+        currentMember();
+        try {
+            lunches.removeCandidate(id, venueId);
+            return Response.noContent().build();
+        } catch (LunchNotFoundException e) {
+            throw new NotFoundException(e);
+        } catch (LunchNotPlannedException e) {
+            return error(Response.Status.CONFLICT, "lunch-not-planned");
+        } catch (NotACandidateException e) {
+            return error(Response.Status.CONFLICT, "not-a-candidate");
         }
     }
 

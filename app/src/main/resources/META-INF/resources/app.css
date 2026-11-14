@@ -118,20 +118,20 @@ main > .poster {
 /* Venues */
 #venues > h2 { margin: 0 var(--gutter) 0.75rem; font-size: 1rem; font-weight: 500; letter-spacing: 0; }
 #venues > h1 { font-size: 5.25rem; }
-#candidates { margin: 0; padding: 0; border-top: 2px solid var(--ink); list-style: none; counter-reset: candidate; }
-.candidate {
+#venue-list { margin: 0; padding: 0; border-top: 2px solid var(--ink); list-style: none; counter-reset: venue; }
+.venue {
     display: grid;
     grid-template-columns: 2.5rem minmax(0, 1fr);
     padding: 0.75rem var(--gutter) 0.875rem;
     border-bottom: 1px solid var(--ink);
-    counter-increment: candidate;
+    counter-increment: venue;
 }
-.candidate::before { content: counter(candidate, decimal-leading-zero); grid-row: 1 / span 3; font-weight: 800; line-height: 2.1rem; }
-.candidate > * { grid-column: 2; }
-.candidate h3 { margin: 0; font-size: 1.875rem; font-weight: 800; line-height: 1.08; letter-spacing: -0.025em; }
-.candidate p { margin: 0.25rem 0 0; font-size: 0.9375rem; }
-.candidate.visited h3 { text-decoration: line-through; text-decoration-thickness: 3px; }
-.candidate .venue-visited { font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; }
+.venue::before { content: counter(venue, decimal-leading-zero); grid-row: 1 / span 3; font-weight: 800; line-height: 2.1rem; }
+.venue > * { grid-column: 2; }
+.venue h3 { margin: 0; font-size: 1.875rem; font-weight: 800; line-height: 1.08; letter-spacing: -0.025em; }
+.venue p { margin: 0.25rem 0 0; font-size: 0.9375rem; }
+.venue.visited h3 { text-decoration: line-through; text-decoration-thickness: 3px; }
+.venue .venue-visited { font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; }
 
 /* A bottom sheet out of <details>: the open summary becomes the backdrop that closes it. */
 .sheet {
@@ -225,6 +225,19 @@ main > .poster {
 #lunch > h1 { font-size: 3.5rem; }
 #lunch > form:not(.stack) { margin: 0 var(--gutter); }
 .cancel-lunch { color: var(--alert); }
+#candidate-venues { margin: 0 0 1.25rem; padding: 0; border-top: 2px solid var(--ink); list-style: none; }
+.candidate-venue {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.25rem 0.75rem;
+    padding: 0.625rem var(--gutter);
+    border-bottom: 1px solid var(--ink);
+}
+.candidate-name { font-size: 1.5rem; font-weight: 800; letter-spacing: -0.02em; }
+.candidate-venue.visited .candidate-name { text-decoration: line-through; text-decoration-thickness: 3px; }
+.candidate-visited { font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; }
+.candidate-venue form { margin: 0 0 0 auto; }
 #lunch-comments { margin: 0 0 1.25rem; padding: 0; border-top: 2px solid var(--ink); list-style: none; }
 .lunch-comment { padding: 0.625rem var(--gutter); border-bottom: 1px solid var(--ink); }
 .lunch-comment p { margin: 0; }

@@ -58,7 +58,7 @@ class UiVenueDriver implements VenueDriver {
     }
 
     private Locator listed(String name) {
-        return page.locator("#candidates .candidate")
+        return page.locator("#venue-list .venue")
                 .filter(new Locator.FilterOptions()
                         .setHas(page.locator(".venue-name")
                                 .getByText(name, new Locator.GetByTextOptions().setExact(true))));

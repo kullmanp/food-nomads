@@ -24,6 +24,11 @@ class PanacheVenueRepository implements VenueRepository {
     }
 
     @Override
+    public Optional<Venue> find(UUID id) {
+        return Venue.findByIdOptional(id);
+    }
+
+    @Override
     public Optional<Venue> findForUpdate(UUID id) {
         return Venue.find("id", id).withLock(LockModeType.PESSIMISTIC_WRITE).firstResultOptional();
     }

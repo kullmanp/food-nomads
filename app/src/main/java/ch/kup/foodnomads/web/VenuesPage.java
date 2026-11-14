@@ -27,7 +27,7 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * The candidate Venues, newest first and marked visited or not, with a form to propose one. The form posts with htmx,
+ * All Venues, newest first and marked visited or not, with a form to propose one. The form posts with htmx,
  * which swaps in the re-rendered list; without JavaScript it is an ordinary form post.
  */
 @Path("/venues")
@@ -39,11 +39,11 @@ public class VenuesPage {
 
     static final DateTimeFormatter DATE = DateTimeFormatter.ofPattern("d MMM yyyy", Locale.ENGLISH);
 
-    public record Candidate(
+    public record VenueRow(
             String name, String address, String proposedBy, String proposedAt, String proposedOn, boolean visited) {
-        static Candidate of(Venue venue, boolean visited) {
+        static VenueRow of(Venue venue, boolean visited) {
             var proposedAt = venue.proposedAt.atZone(ZONE);
-            return new Candidate(
+            return new VenueRow(
                     venue.name,
                     venue.address,
                     venue.proposedBy.displayName,
@@ -60,7 +60,7 @@ public class VenuesPage {
 
     @CheckedTemplate
     static class Templates {
-        static native TemplateInstance venues(List<Candidate> candidates, Draft draft);
+        static native TemplateInstance venues(List<VenueRow> venues, Draft draft);
     }
 
     @Inject
@@ -102,8 +102,8 @@ public class VenuesPage {
     private TemplateInstance page(Draft draft) {
         Set<UUID> visited = lunches.visitedVenueIds();
         return Templates.venues(
-                venues.candidates().stream()
-                        .map(venue -> Candidate.of(venue, visited.contains(venue.id)))
+                venues.newestFirst().stream()
+                        .map(venue -> VenueRow.of(venue, visited.contains(venue.id)))
                         .toList(),
                 draft);
     }

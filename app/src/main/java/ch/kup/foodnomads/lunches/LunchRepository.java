@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-/** Where Lunches and their comments are kept (ADR-0005). */
+/** Where Lunches, their comments and their Candidate Venues are kept (ADR-0005). */
 public interface LunchRepository {
 
     /**
@@ -13,7 +13,7 @@ public interface LunchRepository {
      */
     void add(Lunch lunch);
 
-    /** The Lunch with its Venue, comments and their authors loaded. */
+    /** The Lunch with its Venue, comments and their authors, and Candidate Venues with their Venues loaded. */
     Optional<Lunch> find(UUID id);
 
     /** Like {@link #find}, but holds the Lunch for this transaction, so that its state changes one at a time. */
@@ -25,4 +25,8 @@ public interface LunchRepository {
     List<Lunch> all();
 
     void addComment(LunchComment comment);
+
+    void addCandidate(CandidateVenue candidate);
+
+    void removeCandidate(CandidateVenue candidate);
 }

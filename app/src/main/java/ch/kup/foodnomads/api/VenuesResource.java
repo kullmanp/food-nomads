@@ -20,7 +20,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-/** The candidate Venues, newest first, marked visited or not, and proposing a new one. */
+/** All Venues, newest first, marked visited or not, and proposing a new one. */
 @Path("/api/venues")
 @Produces(MediaType.APPLICATION_JSON)
 public class VenuesResource {
@@ -48,9 +48,9 @@ public class VenuesResource {
     SecurityIdentity identity;
 
     @GET
-    public List<VenueJson> candidates() {
+    public List<VenueJson> all() {
         Set<UUID> visited = lunches.visitedVenueIds();
-        return venues.candidates().stream()
+        return venues.newestFirst().stream()
                 .map(venue -> VenueJson.of(venue, visited.contains(venue.id)))
                 .toList();
     }

@@ -27,9 +27,14 @@ public class InMemoryVenueRepository implements VenueRepository {
     }
 
     @Override
+    public Optional<Venue> find(UUID id) {
+        return venues.stream().filter(venue -> venue.id.equals(id)).findFirst();
+    }
+
+    @Override
     public Optional<Venue> findForUpdate(UUID id) {
         locked.add(id);
-        return venues.stream().filter(venue -> venue.id.equals(id)).findFirst();
+        return find(id);
     }
 
     /** The ids {@link #findForUpdate} was asked for, in order. */
