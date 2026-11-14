@@ -1,6 +1,7 @@
 package ch.kup.foodnomads.web;
 
 import ch.kup.foodnomads.lunches.AlreadyCandidateException;
+import ch.kup.foodnomads.lunches.CandidatePickedException;
 import ch.kup.foodnomads.lunches.CommentTextRequiredException;
 import ch.kup.foodnomads.lunches.DateInPastException;
 import ch.kup.foodnomads.lunches.DateNotPastException;
@@ -8,11 +9,14 @@ import ch.kup.foodnomads.lunches.ListedCandidate;
 import ch.kup.foodnomads.lunches.Lunch;
 import ch.kup.foodnomads.lunches.LunchAlreadyPlannedException;
 import ch.kup.foodnomads.lunches.LunchComment;
+import ch.kup.foodnomads.lunches.LunchNotDueException;
 import ch.kup.foodnomads.lunches.LunchNotFoundException;
 import ch.kup.foodnomads.lunches.LunchNotPlannedException;
 import ch.kup.foodnomads.lunches.Lunches;
+import ch.kup.foodnomads.lunches.NoVenueException;
 import ch.kup.foodnomads.lunches.NotACandidateException;
 import ch.kup.foodnomads.lunches.RsvpAnswer;
+import ch.kup.foodnomads.lunches.VenuePickedException;
 import ch.kup.foodnomads.lunches.VenueVisitedException;
 import ch.kup.foodnomads.lunches.VoteDirection;
 import ch.kup.foodnomads.members.Member;
@@ -44,8 +48,9 @@ import java.util.UUID;
 
 /**
  * The Lunches: planning one when none is planned, recording one from before the app, the list,
- * and a Lunch's own page with its date, who is in and out, its Candidate Venues, their Votes and its
- * chat. The forms are ordinary form posts that come back to a page, so a reload doesn't post again.
+ * and a Lunch's own page with its date and Venue, who is in and out, its Candidate Venues, their
+ * Votes and its chat, and marking it held. The forms are ordinary form posts that come back to a
+ * page, so a reload doesn't post again.
  */
 @Path("/lunches")
 @Produces(MediaType.TEXT_HTML)
@@ -55,9 +60,22 @@ public class LunchesPage {
 
     private static final URI LIST = URI.create("/lunches");
 
-    /** {@code venue} is the Venue's name, or null for none yet. {@code in} is how many Members are in. */
-    public record LunchRow(UUID id, String date, String dateOn, String state, boolean planned, String venue, int in) {
-        static LunchRow of(Lunch lunch) {
+    /**
+     * {@code venue} is the Venue's name, or null for none yet. {@code in} is how many Members are in.
+     * {@code due} if it's planned and its date has come, so it can be marked held; {@code over} if
+     * it's still planned although its date has passed.
+     */
+    public record LunchRow(
+            UUID id,
+            String date,
+            String dateOn,
+            String state,
+            boolean planned,
+            String venue,
+            int in,
+            boolean due,
+            boolean over) {
+        static LunchRow of(Lunch lunch, Lunches lunches) {
             return new LunchRow(
                     lunch.id,
                     lunch.date.toString(),
@@ -65,7 +83,9 @@ public class LunchesPage {
                     lunch.state.name().toLowerCase(Locale.ROOT),
                     lunch.isPlanned(),
                     lunch.venue == null ? null : lunch.venue.name,
-                    lunch.inCount());
+                    lunch.inCount(),
+                    lunches.isDue(lunch),
+                    lunches.isOver(lunch));
         }
     }
 
@@ -95,15 +115,18 @@ public class LunchesPage {
     }
 
     /**
-     * A Candidate Venue, marked visited once a Lunch has been held there, with its up and down
-     * Votes. {@code myVote} is the Member's own, {@code up}, {@code down} or empty for none.
+     * A Candidate Venue, marked visited once a Lunch has been held there and picked if it's the
+     * Lunch's Venue, with its up and down Votes. {@code myVote} is the Member's own, {@code up},
+     * {@code down} or empty for none.
      */
-    public record CandidateRow(String venueId, String name, boolean visited, int up, int down, String myVote) {
+    public record CandidateRow(
+            String venueId, String name, boolean visited, boolean picked, int up, int down, String myVote) {
         static CandidateRow of(ListedCandidate candidate) {
             return new CandidateRow(
                     candidate.venue().id.toString(),
                     candidate.venue().name,
                     candidate.visited(),
+                    candidate.picked(),
                     candidate.up(),
                     candidate.down(),
                     candidate.myVote() == null ? "" : candidate.myVote().name().toLowerCase(Locale.ROOT));
@@ -246,6 +269,8 @@ public class LunchesPage {
             throw new NotFoundException(e);
         } catch (VenueVisitedException e) {
             return recordRefused(Response.Status.CONFLICT.getStatusCode(), givenDate, givenVenue, "venue-visited");
+        } catch (VenuePickedException e) {
+            return recordRefused(Response.Status.CONFLICT.getStatusCode(), givenDate, givenVenue, "venue-picked");
         }
     }
 
@@ -380,8 +405,58 @@ public class LunchesPage {
             lunches.removeCandidate(id, venueId);
         } catch (LunchNotFoundException e) {
             throw new NotFoundException(e);
-        } catch (LunchNotPlannedException | NotACandidateException e) {
+        } catch (LunchNotPlannedException | NotACandidateException | CandidatePickedException e) {
             // Someone else was quicker. The page shows how things stand.
+        }
+        return Response.seeOther(lunchPath(id)).build();
+    }
+
+    /** Picks the Candidate Venue; a Venue id that isn't one just comes back to the page. */
+    @POST
+    @Path("{id}/venue")
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    public Response pick(@PathParam("id") UUID id, @FormParam("venue") String venue) {
+        currentMember();
+        UUID venueId;
+        try {
+            venueId = UUID.fromString(venue == null ? "" : venue.strip());
+        } catch (IllegalArgumentException e) {
+            return Response.seeOther(lunchPath(id)).build();
+        }
+        try {
+            lunches.pick(id, venueId);
+        } catch (LunchNotFoundException e) {
+            throw new NotFoundException(e);
+        } catch (LunchNotPlannedException | NotACandidateException | VenueVisitedException e) {
+            // Someone else was quicker. The page shows how things stand.
+        }
+        return Response.seeOther(lunchPath(id)).build();
+    }
+
+    @POST
+    @Path("{id}/venue/clear")
+    public Response clearPick(@PathParam("id") UUID id) {
+        currentMember();
+        try {
+            lunches.clearPick(id);
+        } catch (LunchNotFoundException e) {
+            throw new NotFoundException(e);
+        } catch (LunchNotPlannedException e) {
+            // Someone else was quicker. The page shows how things stand.
+        }
+        return Response.seeOther(lunchPath(id)).build();
+    }
+
+    @POST
+    @Path("{id}/held")
+    public Response hold(@PathParam("id") UUID id) {
+        currentMember();
+        try {
+            lunches.hold(id);
+        } catch (LunchNotFoundException e) {
+            throw new NotFoundException(e);
+        } catch (LunchNotPlannedException | LunchNotDueException | NoVenueException | VenueVisitedException e) {
+            // Someone moved the Lunch, cleared its pick or was quicker. The page shows how things stand.
         }
         return Response.seeOther(lunchPath(id)).build();
     }
@@ -432,7 +507,8 @@ public class LunchesPage {
     }
 
     private TemplateInstance listPage(PlanDraft draft, RecordDraft pastDraft) {
-        List<LunchRow> all = lunches.all().stream().map(LunchRow::of).toList();
+        List<LunchRow> all =
+                lunches.all().stream().map(lunch -> LunchRow.of(lunch, lunches)).toList();
         LunchRow planned = all.stream().filter(LunchRow::planned).findFirst().orElse(null);
         List<LunchRow> others = all.stream().filter(row -> !row.planned()).toList();
         LocalDate today = lunches.today();
@@ -456,7 +532,7 @@ public class LunchesPage {
             throw new NotFoundException(e);
         }
         return Templates.lunch(
-                LunchRow.of(lunch),
+                LunchRow.of(lunch, lunches),
                 new MoveForm(lunches.today().toString(), moveDraft),
                 Rsvps.of(lunch, viewer),
                 lunches.candidates(lunch, viewer).stream().map(CandidateRow::of).toList(),

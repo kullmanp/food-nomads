@@ -11,6 +11,21 @@
     {/if}
 
     {#if lunch.planned}
+    {#if lunch.venue}
+    <form id="clear-venue-form" method="post" action="/lunches/{lunch.id}/venue/clear">
+        <button id="clear-venue-button" class="text-button" type="submit">{msg:lunch_clear_venue}</button>
+    </form>
+    {/if}
+    {#if lunch.due}
+    {#if lunch.venue}
+    <form id="hold-lunch-form" method="post" action="/lunches/{lunch.id}/held"
+          data-confirm="{msg:lunch_hold_confirm}" onsubmit="return confirm(this.dataset.confirm)">
+        <button id="hold-lunch-button" class="solid" type="submit">{msg:lunch_hold}</button>
+    </form>
+    {#else}
+    <p id="lunch-hold-needs-venue">{msg:lunch_hold_needs_venue}</p>
+    {/if}
+    {/if}
     <form id="cancel-lunch-form" method="post" action="/lunches/{lunch.id}/cancel"
           data-confirm="{msg:lunch_cancel_confirm}" onsubmit="return confirm(this.dataset.confirm)">
         <button id="cancel-lunch-button" class="text-button cancel-lunch" type="submit">{msg:lunch_cancel}</button>
@@ -63,12 +78,21 @@
     {#else}
     <ul id="candidate-venues">
         {#for candidate in candidates}
-        <li class="candidate-venue{#if candidate.visited} visited{/if}">
+        <li class="candidate-venue{#if candidate.visited} visited{/if}{#if candidate.picked} picked{/if}">
             <span class="candidate-name">{candidate.name}</span>
+            {#if candidate.picked}
+            <span class="candidate-picked">{msg:lunch_candidate_picked}</span>
+            {/if}
             {#if candidate.visited}
             <span class="candidate-visited">{msg:lunch_candidate_visited}</span>
             {/if}
-            {#if lunch.planned}
+            {#if lunch.planned && !candidate.picked}
+            {#if !candidate.visited}
+            <form method="post" action="/lunches/{lunch.id}/venue">
+                <input type="hidden" name="venue" value="{candidate.venueId}">
+                <button class="text-button pick-candidate" type="submit">{msg:lunch_candidate_pick}</button>
+            </form>
+            {/if}
             <form method="post" action="/lunches/{lunch.id}/candidates/{candidate.venueId}/remove">
                 <button class="text-button remove-candidate" type="submit">{msg:lunch_candidate_remove}</button>
             </form>

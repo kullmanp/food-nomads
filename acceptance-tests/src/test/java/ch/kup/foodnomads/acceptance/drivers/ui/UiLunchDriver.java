@@ -301,29 +301,55 @@ class UiLunchDriver implements LunchDriver {
         assertThat(page.locator("#lunch-date")).not().hasAttribute("datetime", date.toString());
     }
 
+    /** The page offers no Remove for the picked Candidate Venue. */
     @Override
     public void assertRemoveCandidateRejectedAsPicked(String lunchId, String venue) {
-        throw new UnsupportedOperationException("Not implemented yet");
+        page.navigate(lunchPage(lunchId));
+
+        Locator candidate = candidate(venue);
+        assertThat(candidate).hasCount(1);
+        assertThat(candidate.locator(".candidate-picked")).isVisible();
+        assertThat(candidate.locator(".remove-candidate")).not().isAttached();
     }
 
     @Override
     public void pick(String lunchId, String venue) {
-        throw new UnsupportedOperationException("Not implemented yet");
+        page.navigate(lunchPage(lunchId));
+        candidate(venue).locator(".pick-candidate").click();
+
+        assertThat(page.locator("#lunch-venue")).hasText(venue);
+        assertThat(candidate(venue).locator(".candidate-picked")).isVisible();
     }
 
+    /** Marks the Lunch held on its page, answering yes when asked to confirm. */
     @Override
     public void hold(String lunchId) {
-        throw new UnsupportedOperationException("Not implemented yet");
+        page.navigate(lunchPage(lunchId));
+        page.onceDialog(Dialog::accept);
+        page.locator("#hold-lunch-button").click();
+
+        assertThat(page.locator("#lunch-state")).hasAttribute("data-state", "held");
     }
 
+    /** The page offers no Held before the Lunch's date. */
     @Override
     public void assertHoldRejectedAsNotDue(String lunchId) {
-        throw new UnsupportedOperationException("Not implemented yet");
+        page.navigate(lunchPage(lunchId));
+
+        assertThat(page.locator("#lunch-state")).hasAttribute("data-state", "planned");
+        assertThat(page.locator("#lunch-venue")).isVisible();
+        assertThat(page.locator("#hold-lunch-button")).not().isAttached();
     }
 
+    /** The page offers no Held without a Venue, but asks to pick one. */
     @Override
     public void assertHoldRejectedAsNoVenue(String lunchId) {
-        throw new UnsupportedOperationException("Not implemented yet");
+        page.navigate(lunchPage(lunchId));
+
+        assertThat(page.locator("#lunch-state")).hasAttribute("data-state", "planned");
+        assertThat(page.locator("#lunch-no-venue")).isVisible();
+        assertThat(page.locator("#lunch-hold-needs-venue")).isVisible();
+        assertThat(page.locator("#hold-lunch-button")).not().isAttached();
     }
 
     @Override

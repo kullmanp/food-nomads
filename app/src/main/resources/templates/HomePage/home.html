@@ -15,9 +15,32 @@
     <a id="planned-lunch" class="lunch-card" href="/lunches/{plannedLunch.id}">
         <span class="lunch-label">{msg:home_next_lunch}</span>
         <time class="lunch-date" datetime="{plannedLunch.date}">{plannedLunch.dateOn}</time>
+        {#if plannedLunch.venue}
+        <span class="lunch-venue">{plannedLunch.venue}</span>
+        {#else}
         <span class="lunch-venue no-venue">{msg:lunch_no_venue}</span>
+        {/if}
         <span class="lunch-in" data-count="{plannedLunch.in}">{msg:lunch_in_count(plannedLunch.in)}</span>
     </a>
+    {#if plannedLunch.over}
+    <section id="lunch-over" class="lunch-over">
+        <p>{msg:home_lunch_over}</p>
+        <div class="lunch-over-actions">
+            {#if plannedLunch.venue}
+            <form method="post" action="/lunches/{plannedLunch.id}/held"
+                  data-confirm="{msg:lunch_hold_confirm}" onsubmit="return confirm(this.dataset.confirm)">
+                <button id="over-held-button" class="solid" type="submit">{msg:home_lunch_over_held}</button>
+            </form>
+            {#else}
+            <a id="over-pick-venue" href="/lunches/{plannedLunch.id}">{msg:home_lunch_over_pick_venue}</a>
+            {/if}
+            <form method="post" action="/lunches/{plannedLunch.id}/cancel"
+                  data-confirm="{msg:lunch_cancel_confirm}" onsubmit="return confirm(this.dataset.confirm)">
+                <button id="over-cancel-button" class="text-button cancel-lunch" type="submit">{msg:home_lunch_over_cancel}</button>
+            </form>
+        </div>
+    </section>
+    {/if}
     {#else}
     <a id="plan-lunch-link" class="solid" href="/lunches">{msg:home_plan_lunch}</a>
     {/if}

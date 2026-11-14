@@ -68,7 +68,9 @@ class PanacheLunchRepository implements LunchRepository {
     @Override
     public Optional<Lunch> planned() {
         // There is at most one, and a collection fetch can't be limited to the first row in SQL.
-        return Lunch.find("from Lunch l left join fetch l.rsvps where l.state = ?1", LunchState.PLANNED)
+        return Lunch.find(
+                        "from Lunch l left join fetch l.venue left join fetch l.rsvps where l.state = ?1",
+                        LunchState.PLANNED)
                 .singleResultOptional();
     }
 

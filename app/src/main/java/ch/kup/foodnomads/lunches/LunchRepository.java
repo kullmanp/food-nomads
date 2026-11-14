@@ -22,7 +22,7 @@ public interface LunchRepository {
     /** Like {@link #find}, but holds the Lunch for this transaction, so that its state changes one at a time. */
     Optional<Lunch> findForUpdate(UUID id);
 
-    /** The Planned Lunch with its RSVPs, but not their Members. */
+    /** The Planned Lunch with its Venue and RSVPs, but not the RSVPs' Members. */
     Optional<Lunch> planned();
 
     /** All Lunches with their Venues and RSVPs, but not the RSVPs' Members, in no particular order. */

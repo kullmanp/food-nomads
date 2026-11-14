@@ -41,6 +41,8 @@ public class HomePage {
         }
         return Templates.home(
                 member.get().displayName(),
-                lunches.planned().map(LunchesPage.LunchRow::of).orElse(null));
+                lunches.planned()
+                        .map(lunch -> LunchesPage.LunchRow.of(lunch, lunches))
+                        .orElse(null));
     }
 }

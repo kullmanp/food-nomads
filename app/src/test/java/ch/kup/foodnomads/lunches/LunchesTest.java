@@ -443,7 +443,8 @@ class LunchesTest {
         assertThat(candidate.venue).isSameAs(sternen);
         assertThat(lunch.candidates).containsExactly(candidate);
         assertThat(repository.candidates()).containsExactly(candidate);
-        assertThat(lunches.candidates(lunch, anna)).containsExactly(new ListedCandidate(sternen, false, 0, 0, null));
+        assertThat(lunches.candidates(lunch, anna))
+                .containsExactly(new ListedCandidate(sternen, false, false, 0, 0, null));
     }
 
     @Test
@@ -532,7 +533,8 @@ class LunchesTest {
 
         assertThat(lunch.candidates).containsExactly(kept);
         assertThat(repository.candidates()).containsExactly(kept);
-        assertThat(lunches.candidates(lunch, anna)).containsExactly(new ListedCandidate(sternen, false, 0, 0, null));
+        assertThat(lunches.candidates(lunch, anna))
+                .containsExactly(new ListedCandidate(sternen, false, false, 0, 0, null));
         assertThat(repository.locked()).containsExactly(lunch.id, lunch.id, lunch.id);
     }
 
@@ -571,7 +573,8 @@ class LunchesTest {
         assertThatExceptionOfType(LunchNotPlannedException.class)
                 .isThrownBy(() -> lunches.removeCandidate(lunch.id, sternen.id));
         assertThat(lunch.candidates).containsExactly(candidate);
-        assertThat(lunches.candidates(lunch, anna)).containsExactly(new ListedCandidate(sternen, false, 0, 0, null));
+        assertThat(lunches.candidates(lunch, anna))
+                .containsExactly(new ListedCandidate(sternen, false, false, 0, 0, null));
     }
 
     @Test
@@ -591,7 +594,8 @@ class LunchesTest {
 
         lunches.recordPast(TODAY.minusDays(60), sternen.id);
 
-        assertThat(lunches.candidates(lunch, anna)).containsExactly(new ListedCandidate(sternen, true, 0, 0, null));
+        assertThat(lunches.candidates(lunch, anna))
+                .containsExactly(new ListedCandidate(sternen, true, false, 0, 0, null));
     }
 
     @Test
@@ -672,7 +676,7 @@ class LunchesTest {
         assertThat(candidate.votes).containsExactly(vote);
         assertThat(repository.votes()).containsExactly(vote);
         assertThat(lunches.candidates(lunch, anna))
-                .containsExactly(new ListedCandidate(sternen, false, 1, 0, VoteDirection.UP));
+                .containsExactly(new ListedCandidate(sternen, false, false, 1, 0, VoteDirection.UP));
     }
 
     @Test
@@ -688,8 +692,8 @@ class LunchesTest {
 
         assertThat(lunches.candidates(lunch, ben))
                 .containsExactly(
-                        new ListedCandidate(sternen, false, 2, 0, VoteDirection.UP),
-                        new ListedCandidate(kunsthalle, false, 0, 1, null));
+                        new ListedCandidate(sternen, false, false, 2, 0, VoteDirection.UP),
+                        new ListedCandidate(kunsthalle, false, false, 0, 1, null));
     }
 
     @Test
@@ -706,7 +710,7 @@ class LunchesTest {
         assertThat(candidate.votes).containsExactly(first);
         assertThat(repository.votes()).containsExactly(first);
         assertThat(lunches.candidates(lunch, anna))
-                .containsExactly(new ListedCandidate(sternen, false, 0, 1, VoteDirection.DOWN));
+                .containsExactly(new ListedCandidate(sternen, false, false, 0, 1, VoteDirection.DOWN));
     }
 
     @Test
@@ -723,7 +727,7 @@ class LunchesTest {
 
         assertThat(repository.votes()).hasSize(1);
         assertThat(lunches.candidates(lunch, annaAgain))
-                .containsExactly(new ListedCandidate(sternen, false, 0, 1, VoteDirection.DOWN));
+                .containsExactly(new ListedCandidate(sternen, false, false, 0, 1, VoteDirection.DOWN));
     }
 
     @Test
@@ -765,7 +769,7 @@ class LunchesTest {
         assertThatExceptionOfType(LunchNotPlannedException.class)
                 .isThrownBy(() -> lunches.withdrawVote(anna, lunch.id, sternen.id));
         assertThat(lunches.candidates(lunch, anna))
-                .containsExactly(new ListedCandidate(sternen, false, 1, 0, VoteDirection.UP));
+                .containsExactly(new ListedCandidate(sternen, false, false, 1, 0, VoteDirection.UP));
     }
 
     @Test
@@ -791,7 +795,8 @@ class LunchesTest {
 
         assertThat(candidate.votes).containsExactly(kept);
         assertThat(repository.votes()).containsExactly(kept);
-        assertThat(lunches.candidates(lunch, anna)).containsExactly(new ListedCandidate(sternen, false, 1, 0, null));
+        assertThat(lunches.candidates(lunch, anna))
+                .containsExactly(new ListedCandidate(sternen, false, false, 1, 0, null));
     }
 
     @Test
@@ -841,7 +846,8 @@ class LunchesTest {
 
         lunches.addCandidate(lunch.id, sternen.id);
 
-        assertThat(lunches.candidates(lunch, anna)).containsExactly(new ListedCandidate(sternen, false, 0, 0, null));
+        assertThat(lunches.candidates(lunch, anna))
+                .containsExactly(new ListedCandidate(sternen, false, false, 0, 0, null));
     }
 
     @Test
@@ -890,7 +896,7 @@ class LunchesTest {
         lunches.cancel(lunch.id);
 
         assertThat(lunches.candidates(lunch, anna))
-                .containsExactly(new ListedCandidate(sternen, false, 0, 1, VoteDirection.DOWN));
+                .containsExactly(new ListedCandidate(sternen, false, false, 0, 1, VoteDirection.DOWN));
     }
 
     @Test
@@ -907,8 +913,8 @@ class LunchesTest {
 
         assertThat(lunches.candidates(lunch, anna))
                 .containsExactly(
-                        new ListedCandidate(sternen, false, 1, 0, VoteDirection.UP),
-                        new ListedCandidate(kunsthalle, false, 0, 0, null));
+                        new ListedCandidate(sternen, false, false, 1, 0, VoteDirection.UP),
+                        new ListedCandidate(kunsthalle, false, false, 0, 0, null));
     }
 
     @Test
@@ -1046,7 +1052,7 @@ class LunchesTest {
         assertThat(candidate.votes).containsExactly(vote);
         assertThat(repository.votes()).containsExactly(vote);
         assertThat(lunches.candidates(lunch, ben))
-                .containsExactly(new ListedCandidate(sternen, false, 1, 0, VoteDirection.UP));
+                .containsExactly(new ListedCandidate(sternen, false, false, 1, 0, VoteDirection.UP));
     }
 
     @Test
@@ -1126,6 +1132,411 @@ class LunchesTest {
 
         assertThatExceptionOfType(LunchNotFoundException.class)
                 .isThrownBy(() -> lunches.move(unknown, TODAY.plusDays(8)));
+    }
+
+    @Test
+    void pickingMakesTheCandidateVenueTheLunchsVenue() {
+        Venue sternen = venues.propose(anna, "Sternen", null);
+        Lunch lunch = lunches.plan(TODAY.plusDays(7));
+        lunches.addCandidate(lunch.id, sternen.id);
+
+        lunches.pick(lunch.id, sternen.id);
+
+        assertThat(lunch.venue).isSameAs(sternen);
+        assertThat(lunch.isPlanned()).isTrue();
+        assertThat(lunches.visitedVenueIds()).isEmpty();
+    }
+
+    @Test
+    void pickingAgainChangesThePick() {
+        Venue sternen = venues.propose(anna, "Sternen", null);
+        Venue kunsthalle = venues.propose(anna, "Kunsthalle", null);
+        Lunch lunch = lunches.plan(TODAY.plusDays(7));
+        lunches.addCandidate(lunch.id, sternen.id);
+        lunches.addCandidate(lunch.id, kunsthalle.id);
+        lunches.pick(lunch.id, sternen.id);
+
+        lunches.pick(lunch.id, kunsthalle.id);
+
+        assertThat(lunch.venue).isSameAs(kunsthalle);
+    }
+
+    @Test
+    void pickingLocksThePlannedLunchAndTheVenue() {
+        Venue sternen = venues.propose(anna, "Sternen", null);
+        Lunch lunch = lunches.plan(TODAY.plusDays(7));
+        lunches.addCandidate(lunch.id, sternen.id);
+
+        lunches.pick(lunch.id, sternen.id);
+
+        assertThat(repository.locked()).containsExactly(lunch.id, lunch.id);
+        assertThat(venueRepository.locked()).containsExactly(sternen.id);
+    }
+
+    @Test
+    void onlyACandidateVenueCanBePicked() {
+        Venue sternen = venues.propose(anna, "Sternen", null);
+        Lunch lunch = lunches.plan(TODAY.plusDays(7));
+        UUID unknown = UUID.randomUUID();
+
+        assertThatExceptionOfType(NotACandidateException.class).isThrownBy(() -> lunches.pick(lunch.id, sternen.id));
+        assertThatExceptionOfType(NotACandidateException.class).isThrownBy(() -> lunches.pick(lunch.id, unknown));
+        assertThat(lunch.venue).isNull();
+    }
+
+    @Test
+    void aCandidateVenueThatBecameVisitedCannotBePicked() {
+        Venue sternen = venues.propose(anna, "Sternen", null);
+        Lunch lunch = lunches.plan(TODAY.plusDays(7));
+        lunches.addCandidate(lunch.id, sternen.id);
+        lunches.recordPast(TODAY.minusDays(60), sternen.id);
+
+        assertThatExceptionOfType(VenueVisitedException.class).isThrownBy(() -> lunches.pick(lunch.id, sternen.id));
+        assertThat(lunch.venue).isNull();
+    }
+
+    @Test
+    void aCandidateVenueThatBecameVisitedLeavesThePickAsItWas() {
+        Venue sternen = venues.propose(anna, "Sternen", null);
+        Venue kunsthalle = venues.propose(anna, "Kunsthalle", null);
+        Lunch lunch = lunches.plan(TODAY.plusDays(7));
+        lunches.addCandidate(lunch.id, sternen.id);
+        lunches.addCandidate(lunch.id, kunsthalle.id);
+        lunches.pick(lunch.id, kunsthalle.id);
+        lunches.recordPast(TODAY.minusDays(60), sternen.id);
+
+        assertThatExceptionOfType(VenueVisitedException.class).isThrownBy(() -> lunches.pick(lunch.id, sternen.id));
+        assertThat(lunch.venue).isSameAs(kunsthalle);
+    }
+
+    @Test
+    void onlyThePlannedLunchTakesAPick() {
+        Venue sternen = venues.propose(anna, "Sternen", null);
+        Lunch lunch = lunches.plan(TODAY.plusDays(7));
+        lunches.addCandidate(lunch.id, sternen.id);
+        lunches.cancel(lunch.id);
+
+        assertThatExceptionOfType(LunchNotPlannedException.class).isThrownBy(() -> lunches.pick(lunch.id, sternen.id));
+        assertThat(lunch.venue).isNull();
+    }
+
+    @Test
+    void anUnknownLunchTakesNoPick() {
+        Venue sternen = venues.propose(anna, "Sternen", null);
+        UUID unknown = UUID.randomUUID();
+
+        assertThatExceptionOfType(LunchNotFoundException.class).isThrownBy(() -> lunches.pick(unknown, sternen.id));
+        assertThatExceptionOfType(LunchNotFoundException.class).isThrownBy(() -> lunches.clearPick(unknown));
+    }
+
+    @Test
+    void clearingThePickLeavesTheLunchWithoutAVenue() {
+        Venue sternen = venues.propose(anna, "Sternen", null);
+        Lunch lunch = lunches.plan(TODAY.plusDays(7));
+        lunches.addCandidate(lunch.id, sternen.id);
+        lunches.pick(lunch.id, sternen.id);
+
+        lunches.clearPick(lunch.id);
+
+        assertThat(lunch.venue).isNull();
+        assertThat(lunches.candidates(lunch, anna))
+                .containsExactly(new ListedCandidate(sternen, false, false, 0, 0, null));
+    }
+
+    @Test
+    void clearingLocksThePlannedLunch() {
+        Lunch lunch = lunches.plan(TODAY.plusDays(7));
+
+        lunches.clearPick(lunch.id);
+
+        assertThat(repository.locked()).containsExactly(lunch.id);
+    }
+
+    @Test
+    void onlyThePlannedLunchHasItsPickCleared() {
+        Venue sternen = venues.propose(anna, "Sternen", null);
+        Lunch lunch = lunches.plan(TODAY.plusDays(7));
+        lunches.addCandidate(lunch.id, sternen.id);
+        lunches.pick(lunch.id, sternen.id);
+        lunches.cancel(lunch.id);
+
+        assertThatExceptionOfType(LunchNotPlannedException.class).isThrownBy(() -> lunches.clearPick(lunch.id));
+        assertThat(lunch.venue).isSameAs(sternen);
+    }
+
+    @Test
+    void listsThePickedCandidateVenueAsPicked() {
+        Venue sternen = venues.propose(anna, "Sternen", null);
+        Venue kunsthalle = venues.propose(anna, "Kunsthalle", null);
+        Lunch lunch = lunches.plan(TODAY.plusDays(7));
+        lunches.addCandidate(lunch.id, sternen.id);
+        lunches.addCandidate(lunch.id, kunsthalle.id);
+
+        lunches.pick(lunch.id, sternen.id);
+
+        assertThat(lunches.candidates(lunch, anna))
+                .containsExactly(
+                        new ListedCandidate(kunsthalle, false, false, 0, 0, null),
+                        new ListedCandidate(sternen, false, true, 0, 0, null));
+    }
+
+    @Test
+    void thePickedCandidateVenueCannotBeRemoved() {
+        Venue sternen = venues.propose(anna, "Sternen", null);
+        Lunch lunch = lunches.plan(TODAY.plusDays(7));
+        lunches.addCandidate(lunch.id, sternen.id);
+        lunches.pick(lunch.id, sternen.id);
+
+        assertThatExceptionOfType(CandidatePickedException.class)
+                .isThrownBy(() -> lunches.removeCandidate(lunch.id, sternen.id));
+        assertThat(lunch.candidates).extracting(c -> c.venue).containsExactly(sternen);
+        assertThat(repository.candidates()).hasSize(1);
+    }
+
+    @Test
+    void anotherCandidateVenueCanBeRemovedWhileOneIsPicked() {
+        Venue sternen = venues.propose(anna, "Sternen", null);
+        Venue kunsthalle = venues.propose(anna, "Kunsthalle", null);
+        Lunch lunch = lunches.plan(TODAY.plusDays(7));
+        lunches.addCandidate(lunch.id, sternen.id);
+        lunches.addCandidate(lunch.id, kunsthalle.id);
+        lunches.pick(lunch.id, sternen.id);
+
+        lunches.removeCandidate(lunch.id, kunsthalle.id);
+
+        assertThat(lunch.candidates).extracting(c -> c.venue).containsExactly(sternen);
+    }
+
+    @Test
+    void aCandidateVenueCanBeRemovedOnceThePickIsCleared() {
+        Venue sternen = venues.propose(anna, "Sternen", null);
+        Lunch lunch = lunches.plan(TODAY.plusDays(7));
+        lunches.addCandidate(lunch.id, sternen.id);
+        lunches.pick(lunch.id, sternen.id);
+        lunches.clearPick(lunch.id);
+
+        lunches.removeCandidate(lunch.id, sternen.id);
+
+        assertThat(lunch.candidates).isEmpty();
+    }
+
+    @Test
+    void aPastLunchCannotBeRecordedAtTheVenueThePlannedLunchHasPicked() {
+        Venue sternen = venues.propose(anna, "Sternen", null);
+        Lunch lunch = lunches.plan(TODAY.plusDays(7));
+        lunches.addCandidate(lunch.id, sternen.id);
+        lunches.pick(lunch.id, sternen.id);
+
+        assertThatExceptionOfType(VenuePickedException.class)
+                .isThrownBy(() -> lunches.recordPast(TODAY.minusDays(60), sternen.id));
+        assertThat(repository.all()).containsExactly(lunch);
+        assertThat(venueRepository.locked()).containsExactly(sternen.id, sternen.id);
+    }
+
+    @Test
+    void aPastLunchCanBeRecordedAtAnotherVenueThanThePickedOne() {
+        Venue sternen = venues.propose(anna, "Sternen", null);
+        Venue kunsthalle = venues.propose(anna, "Kunsthalle", null);
+        Lunch lunch = lunches.plan(TODAY.plusDays(7));
+        lunches.addCandidate(lunch.id, sternen.id);
+        lunches.pick(lunch.id, sternen.id);
+
+        assertThat(lunches.recordPast(TODAY.minusDays(60), kunsthalle.id).venue).isSameAs(kunsthalle);
+    }
+
+    @Test
+    void aPastLunchCanBeRecordedAtTheVenueACancelledLunchHadPicked() {
+        Venue sternen = venues.propose(anna, "Sternen", null);
+        Lunch cancelled = lunches.plan(TODAY.plusDays(7));
+        lunches.addCandidate(cancelled.id, sternen.id);
+        lunches.pick(cancelled.id, sternen.id);
+        lunches.cancel(cancelled.id);
+        lunches.plan(TODAY.plusDays(14));
+
+        assertThat(lunches.recordPast(TODAY.minusDays(60), sternen.id).venue).isSameAs(sternen);
+    }
+
+    @Test
+    void holdingMakesItAHeldLunchAndItsVenueVisited() {
+        Lunch lunch = planAndPick(TODAY, "Sternen");
+
+        lunches.hold(lunch.id);
+
+        assertThat(lunch.state).isEqualTo(LunchState.HELD);
+        assertThat(lunch.isHeld()).isTrue();
+        assertThat(lunches.planned()).isEmpty();
+        assertThat(lunches.visitedVenueIds()).containsExactly(lunch.venue.id);
+        assertThat(lunches.candidates(lunch, anna))
+                .containsExactly(new ListedCandidate(lunch.venue, true, true, 0, 0, null));
+    }
+
+    @Test
+    void holdingLocksTheLunchAndTheVenue() {
+        Lunch lunch = planAndPick(TODAY, "Sternen");
+
+        lunches.hold(lunch.id);
+
+        assertThat(repository.locked()).endsWith(lunch.id);
+        assertThat(venueRepository.locked()).containsExactly(lunch.venue.id, lunch.venue.id);
+    }
+
+    @Test
+    void aLunchIsNotHeldTheDayBeforeItsDate() {
+        Lunch lunch = planAndPick(TODAY.plusDays(1), "Sternen");
+
+        assertThatExceptionOfType(LunchNotDueException.class).isThrownBy(() -> lunches.hold(lunch.id));
+        assertThat(lunch.isPlanned()).isTrue();
+        assertThat(lunches.visitedVenueIds()).isEmpty();
+    }
+
+    @Test
+    void aLunchCanBeHeldTheDayAfterItsDate() {
+        Lunch lunch = planAndPick(TODAY, "Sternen");
+        clock.advance(Duration.ofDays(1));
+
+        lunches.hold(lunch.id);
+
+        assertThat(lunch.isHeld()).isTrue();
+    }
+
+    @Test
+    void justBeforeMidnightInBaselTheLunchOfTomorrowIsNotHeld() {
+        Lunch lunch = planAndPick(TODAY.plusDays(1), "Sternen");
+        // 23:59:59.999999999 in Basel (UTC+1 in winter) on 1 March.
+        clock.advance(Duration.ofHours(13).minusNanos(1));
+
+        assertThatExceptionOfType(LunchNotDueException.class).isThrownBy(() -> lunches.hold(lunch.id));
+    }
+
+    @Test
+    void atMidnightInBaselTheLunchOfThatDayCanBeHeld() {
+        Lunch lunch = planAndPick(TODAY.plusDays(1), "Sternen");
+        // 00:00 in Basel on 2 March, while it is still 1 March in UTC.
+        clock.advance(Duration.ofHours(13));
+
+        lunches.hold(lunch.id);
+
+        assertThat(lunch.isHeld()).isTrue();
+    }
+
+    @Test
+    void aLunchWithoutAVenueIsNotHeld() {
+        Lunch lunch = lunches.plan(TODAY);
+
+        assertThatExceptionOfType(NoVenueException.class).isThrownBy(() -> lunches.hold(lunch.id));
+        assertThat(lunch.isPlanned()).isTrue();
+    }
+
+    @Test
+    void aLunchWithoutAVenueBeforeItsDateIsNotDueFirst() {
+        Lunch lunch = lunches.plan(TODAY.plusDays(1));
+
+        assertThatExceptionOfType(LunchNotDueException.class).isThrownBy(() -> lunches.hold(lunch.id));
+    }
+
+    @Test
+    void aLunchIsNotHeldAtAVenueThatBecameVisitedMeanwhile() {
+        // Picking and recording lock the Venue, so this can't happen through them. Holding checks anyway.
+        Lunch lunch = planAndPick(TODAY, "Sternen");
+        Venue kunsthalle = venues.propose(anna, "Kunsthalle", null);
+        lunches.recordPast(TODAY.minusDays(60), kunsthalle.id);
+        lunch.venue = kunsthalle;
+
+        assertThatExceptionOfType(VenueVisitedException.class).isThrownBy(() -> lunches.hold(lunch.id));
+        assertThat(lunch.isPlanned()).isTrue();
+    }
+
+    @Test
+    void anUnknownLunchIsNotHeld() {
+        UUID unknown = UUID.randomUUID();
+
+        assertThatExceptionOfType(LunchNotFoundException.class).isThrownBy(() -> lunches.hold(unknown));
+    }
+
+    @Test
+    void aCancelledLunchIsNotHeld() {
+        Lunch lunch = planAndPick(TODAY, "Sternen");
+        lunches.cancel(lunch.id);
+
+        assertThatExceptionOfType(LunchNotPlannedException.class).isThrownBy(() -> lunches.hold(lunch.id));
+        assertThat(lunches.visitedVenueIds()).isEmpty();
+    }
+
+    @Test
+    void aHeldLunchIsFinalButTakesComments() {
+        Lunch lunch = planAndPick(TODAY, "Sternen");
+        Venue kunsthalle = venues.propose(anna, "Kunsthalle", null);
+        lunches.hold(lunch.id);
+        Venue sternen = lunch.venue;
+
+        assertThatExceptionOfType(LunchNotPlannedException.class).isThrownBy(() -> lunches.hold(lunch.id));
+        assertThatExceptionOfType(LunchNotPlannedException.class).isThrownBy(() -> lunches.cancel(lunch.id));
+        assertThatExceptionOfType(LunchNotPlannedException.class).isThrownBy(() -> lunches.clearPick(lunch.id));
+        assertThatExceptionOfType(LunchNotPlannedException.class).isThrownBy(() -> lunches.pick(lunch.id, sternen.id));
+        assertThatExceptionOfType(LunchNotPlannedException.class)
+                .isThrownBy(() -> lunches.move(lunch.id, TODAY.plusDays(1)));
+        assertThatExceptionOfType(LunchNotPlannedException.class)
+                .isThrownBy(() -> lunches.rsvp(anna, lunch.id, RsvpAnswer.IN));
+        assertThatExceptionOfType(LunchNotPlannedException.class)
+                .isThrownBy(() -> lunches.vote(anna, lunch.id, sternen.id, VoteDirection.UP));
+        assertThatExceptionOfType(LunchNotPlannedException.class)
+                .isThrownBy(() -> lunches.addCandidate(lunch.id, kunsthalle.id));
+        assertThatExceptionOfType(LunchNotPlannedException.class)
+                .isThrownBy(() -> lunches.removeCandidate(lunch.id, sternen.id));
+        assertThat(lunch.isHeld()).isTrue();
+        assertThat(lunch.venue).isSameAs(sternen);
+
+        lunches.comment(lunch.id, anna, "Lovely");
+        assertThat(lunch.chat()).extracting(c -> c.text).containsExactly("Lovely");
+    }
+
+    @Test
+    void aHeldLunchMakesRoomForTheNextOne() {
+        Lunch held = planAndPick(TODAY, "Sternen");
+        lunches.hold(held.id);
+
+        Lunch next = lunches.plan(TODAY.plusDays(7));
+
+        assertThat(lunches.planned()).containsSame(next);
+    }
+
+    @Test
+    void aPlannedLunchIsDueOnAndAfterItsDate() {
+        Lunch lunch = lunches.plan(TODAY.plusDays(1));
+        assertThat(lunches.isDue(lunch)).isFalse();
+
+        clock.advance(Duration.ofDays(1));
+        assertThat(lunches.isDue(lunch)).isTrue();
+
+        clock.advance(Duration.ofDays(1));
+        assertThat(lunches.isDue(lunch)).isTrue();
+    }
+
+    @Test
+    void aPlannedLunchIsOverOnlyAfterItsDate() {
+        Lunch lunch = lunches.plan(TODAY);
+        assertThat(lunches.isOver(lunch)).isFalse();
+
+        clock.advance(Duration.ofDays(1));
+        assertThat(lunches.isOver(lunch)).isTrue();
+    }
+
+    @Test
+    void aLunchThatIsNotPlannedIsNeitherDueNorOver() {
+        Lunch lunch = planAndCancel(TODAY);
+        clock.advance(Duration.ofDays(1));
+
+        assertThat(lunches.isDue(lunch)).isFalse();
+        assertThat(lunches.isOver(lunch)).isFalse();
+    }
+
+    /** Plans a Lunch on this date, puts up a new Venue with this name and picks it. */
+    private Lunch planAndPick(LocalDate date, String venueName) {
+        Venue venue = venues.propose(anna, venueName, null);
+        Lunch lunch = lunches.plan(date);
+        lunches.addCandidate(lunch.id, venue.id);
+        lunches.pick(lunch.id, venue.id);
+        return lunch;
     }
 
     private Lunch planAndCancel(LocalDate date) {

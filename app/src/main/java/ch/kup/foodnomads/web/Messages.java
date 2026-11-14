@@ -50,6 +50,18 @@ public interface Messages {
     String home_plan_lunch();
 
     @Message
+    String home_lunch_over();
+
+    @Message
+    String home_lunch_over_held();
+
+    @Message
+    String home_lunch_over_cancel();
+
+    @Message
+    String home_lunch_over_pick_venue();
+
+    @Message
     String login_title();
 
     @Message
@@ -179,6 +191,9 @@ public interface Messages {
     String lunches_record_venue_visited();
 
     @Message
+    String lunches_record_venue_picked();
+
+    @Message
     String lunches_record_no_venues();
 
     @Message
@@ -230,6 +245,18 @@ public interface Messages {
     String lunch_cancel_confirm();
 
     @Message
+    String lunch_clear_venue();
+
+    @Message
+    String lunch_hold();
+
+    @Message
+    String lunch_hold_confirm();
+
+    @Message
+    String lunch_hold_needs_venue();
+
+    @Message
     String lunch_candidates();
 
     @Message
@@ -240,6 +267,12 @@ public interface Messages {
 
     @Message
     String lunch_candidate_remove();
+
+    @Message
+    String lunch_candidate_pick();
+
+    @Message
+    String lunch_candidate_picked();
 
     @Message
     String lunch_vote_up(int count);

@@ -20,8 +20,9 @@ import java.util.stream.Collectors;
 
 /**
  * Planning, moving and cancelling Lunches, recording the ones from before the app, putting up
- * Candidate Venues and voting on them, answering in or out, and talking Lunches over in their Lunch
- * Comments. Which Venues are visited follows from the Held Lunches.
+ * Candidate Venues and voting on them, answering in or out, picking the Venue, marking the Lunch
+ * held, and talking Lunches over in their Lunch Comments. Which Venues are visited follows from the
+ * Held Lunches.
  */
 @ApplicationScoped
 public class Lunches {
@@ -85,8 +86,9 @@ public class Lunches {
      * Records a Lunch from before the app as held, on this date at this Venue, which makes the
      * Venue visited. It isn't the Planned Lunch, so it can be recorded while one is planned. Fails
      * with {@link DateNotPastException} unless the date is before today, with
-     * {@link VenueNotFoundException} for an unknown Venue and with {@link VenueVisitedException} if
-     * a Lunch has been held there already.
+     * {@link VenueNotFoundException} for an unknown Venue, with {@link VenueVisitedException} if
+     * a Lunch has been held there already, and with {@link VenuePickedException} if it is the
+     * Planned Lunch's Venue.
      */
     @Transactional
     public Lunch recordPast(LocalDate date, UUID venueId) {
@@ -97,6 +99,9 @@ public class Lunches {
         Venue venue = venues.lock(venueId);
         if (visitedVenueIds().contains(venue.id)) {
             throw new VenueVisitedException();
+        }
+        if (repository.planned().map(planned -> isVenueOf(planned, venue.id)).orElse(false)) {
+            throw new VenuePickedException();
         }
         Lunch lunch = new Lunch();
         lunch.id = UUID.randomUUID();
@@ -154,13 +159,17 @@ public class Lunches {
 
     /**
      * Takes this Venue off the Planned Lunch's Candidate Venues, also if it has become visited in
-     * the meantime. Fails with {@link LunchNotPlannedException} for a held or cancelled Lunch and
-     * with {@link NotACandidateException} if the Venue isn't up.
+     * the meantime. Fails with {@link LunchNotPlannedException} for a held or cancelled Lunch, with
+     * {@link NotACandidateException} if the Venue isn't up, and with {@link CandidatePickedException}
+     * if it is the Lunch's Venue.
      */
     @Transactional
     public void removeCandidate(UUID lunchId, UUID venueId) {
         Lunch lunch = plannedForUpdate(lunchId);
         CandidateVenue candidate = candidateOf(lunch, venueId).orElseThrow(NotACandidateException::new);
+        if (isVenueOf(lunch, venueId)) {
+            throw new CandidatePickedException();
+        }
         // Its Votes go with it.
         candidate.votes.forEach(repository::removeVote);
         lunch.candidates.remove(candidate);
@@ -208,8 +217,9 @@ public class Lunches {
     }
 
     /**
-     * The Lunch's Candidate Venues as this Member sees them: each marked visited or not, with its
-     * up and down Votes and the Member's own. Listed by up minus down, highest first, then by name.
+     * The Lunch's Candidate Venues as this Member sees them: each marked visited or not and picked
+     * or not, with its up and down Votes and the Member's own. Listed by up minus down, highest
+     * first, then by name.
      */
     @Transactional
     public List<ListedCandidate> candidates(Lunch lunch, Member member) {
@@ -218,6 +228,7 @@ public class Lunches {
                 .map(candidate -> new ListedCandidate(
                         candidate.venue,
                         visited.contains(candidate.venue.id),
+                        isVenueOf(lunch, candidate.venue.id),
                         count(candidate, VoteDirection.UP),
                         count(candidate, VoteDirection.DOWN),
                         voteOf(candidate, member).map(vote -> vote.direction).orElse(null)))
@@ -279,6 +290,67 @@ public class Lunches {
         lunch.rsvps.clear();
     }
 
+    /**
+     * Picks this Candidate Venue as the Planned Lunch's Venue, in place of any earlier pick. Fails
+     * with {@link LunchNotPlannedException} for a held or cancelled Lunch, with
+     * {@link NotACandidateException} if the Venue isn't up, and with {@link VenueVisitedException}
+     * if a Lunch has been held there since it was put up.
+     */
+    @Transactional
+    public void pick(UUID lunchId, UUID venueId) {
+        Lunch lunch = plannedForUpdate(lunchId);
+        CandidateVenue candidate = candidateOf(lunch, venueId).orElseThrow(NotACandidateException::new);
+        // Locked before asking whether it's visited, so that a past Lunch can't be recorded there at
+        // the same time: either that one sees the pick, or this one sees the Held Lunch.
+        Venue venue = venues.lock(candidate.venue.id);
+        if (visitedVenueIds().contains(venue.id)) {
+            throw new VenueVisitedException();
+        }
+        lunch.venue = venue;
+    }
+
+    /** Clears the Planned Lunch's pick, so it has no Venue. Fails with {@link LunchNotPlannedException} for a held or cancelled Lunch. */
+    @Transactional
+    public void clearPick(UUID lunchId) {
+        plannedForUpdate(lunchId).venue = null;
+    }
+
+    /**
+     * Marks the Planned Lunch as held, which makes its Venue visited. Fails with
+     * {@link LunchNotPlannedException} for a held or cancelled Lunch, with
+     * {@link LunchNotDueException} before its date, with {@link NoVenueException} without a Venue,
+     * and with {@link VenueVisitedException} if a Lunch has been held at its Venue in the meantime.
+     */
+    @Transactional
+    public void hold(UUID lunchId) {
+        Lunch lunch = plannedForUpdate(lunchId);
+        if (!isDue(lunch)) {
+            throw new LunchNotDueException();
+        }
+        if (lunch.venue == null) {
+            throw new NoVenueException();
+        }
+        // The same lock as recording a past Lunch, so that the two can't both make it visited.
+        Venue venue = venues.lock(lunch.venue.id);
+        if (visitedVenueIds().contains(venue.id)) {
+            throw new VenueVisitedException();
+        }
+        lunch.state = LunchState.HELD;
+    }
+
+    /** Whether the Lunch is planned and its date has come: from then on it can be marked held. */
+    public boolean isDue(Lunch lunch) {
+        return lunch.isPlanned() && !lunch.date.isAfter(today());
+    }
+
+    /**
+     * Whether the Lunch is still planned although its date has passed. It stays planned until a
+     * Member marks it held or cancels it.
+     */
+    public boolean isOver(Lunch lunch) {
+        return lunch.isPlanned() && lunch.date.isBefore(today());
+    }
+
     /** The Lunch, held for this transaction, or {@link LunchNotPlannedException} unless it's planned. */
     private Lunch plannedForUpdate(UUID id) {
         Lunch lunch = repository.findForUpdate(id).orElseThrow(LunchNotFoundException::new);
@@ -286,6 +358,11 @@ public class Lunches {
             throw new LunchNotPlannedException();
         }
         return lunch;
+    }
+
+    /** Whether the Venue with this id is the Lunch's Venue. */
+    private static boolean isVenueOf(Lunch lunch, UUID venueId) {
+        return lunch.venue != null && lunch.venue.id.equals(venueId);
     }
 
     private static Optional<Vote> voteOf(CandidateVenue candidate, Member member) {

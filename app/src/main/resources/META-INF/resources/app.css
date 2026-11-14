@@ -225,6 +225,13 @@ main > .poster {
 #lunch > h1 { font-size: 3.5rem; }
 #lunch > form:not(.stack) { margin: 0 var(--gutter); }
 .cancel-lunch { color: var(--alert); }
+#lunch > #hold-lunch-form { margin: 0.75rem var(--gutter); }
+#hold-lunch-button { width: 100%; }
+#lunch-hold-needs-venue { margin: 0.75rem var(--gutter); }
+.lunch-over { margin: -0.5rem var(--gutter) 1.25rem; padding: var(--gutter); border: 2px solid var(--ink); }
+.lunch-over p { margin: 0 0 0.75rem; font-size: 1.1875rem; font-weight: 800; }
+.lunch-over-actions { display: flex; align-items: center; gap: 1.25rem; }
+.lunch-over-actions form { margin: 0; }
 .lunch-in { font-size: 1.0625rem; font-weight: 800; }
 .rsvp-buttons { display: flex; gap: 0.75rem; margin: 0 var(--gutter) 0.75rem; }
 .rsvp-buttons form { flex: 1; margin: 0; }
@@ -254,6 +261,8 @@ main > .poster {
 .candidate-venue.visited .candidate-name { text-decoration: line-through; text-decoration-thickness: 3px; }
 .candidate-visited { font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; }
 .candidate-venue form { margin: 0 0 0 auto; }
+.candidate-venue form + form { margin-left: 0; }
+.candidate-picked { padding: 0 0.375rem; background: var(--ink); color: var(--paper); font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; }
 .candidate-votes { display: flex; gap: 0.5rem; width: 100%; }
 .candidate-votes form { margin: 0; }
 .vote-button, .vote-count {

@@ -10,7 +10,11 @@
     <a id="planned-lunch" class="lunch-card" href="/lunches/{planned.id}">
         <span class="lunch-label">{msg:lunches_planned}</span>
         <time class="lunch-date" datetime="{planned.date}">{planned.dateOn}</time>
+        {#if planned.venue}
+        <span class="lunch-venue">{planned.venue}</span>
+        {#else}
         <span class="lunch-venue no-venue">{msg:lunch_no_venue}</span>
+        {/if}
         <span class="lunch-in" data-count="{planned.in}">{msg:lunch_in_count(planned.in)}</span>
     </a>
     {#else}
@@ -77,6 +81,8 @@
             <p id="record-venue-required" role="alert">{msg:lunches_record_venue_required}</p>
             {#else if pastDraft.error == 'venue-visited'}
             <p id="record-venue-visited" role="alert">{msg:lunches_record_venue_visited}</p>
+            {#else if pastDraft.error == 'venue-picked'}
+            <p id="record-venue-picked" role="alert">{msg:lunches_record_venue_picked}</p>
             {/if}
             <button id="record-button" class="solid" type="submit">{msg:lunches_record}</button>
         </form>

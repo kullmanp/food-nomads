@@ -1,6 +1,7 @@
 package ch.kup.foodnomads.api;
 
 import ch.kup.foodnomads.lunches.AlreadyCandidateException;
+import ch.kup.foodnomads.lunches.CandidatePickedException;
 import ch.kup.foodnomads.lunches.CandidateVenue;
 import ch.kup.foodnomads.lunches.CommentTextRequiredException;
 import ch.kup.foodnomads.lunches.DateInPastException;
@@ -9,11 +10,14 @@ import ch.kup.foodnomads.lunches.ListedCandidate;
 import ch.kup.foodnomads.lunches.Lunch;
 import ch.kup.foodnomads.lunches.LunchAlreadyPlannedException;
 import ch.kup.foodnomads.lunches.LunchComment;
+import ch.kup.foodnomads.lunches.LunchNotDueException;
 import ch.kup.foodnomads.lunches.LunchNotFoundException;
 import ch.kup.foodnomads.lunches.LunchNotPlannedException;
 import ch.kup.foodnomads.lunches.Lunches;
+import ch.kup.foodnomads.lunches.NoVenueException;
 import ch.kup.foodnomads.lunches.NotACandidateException;
 import ch.kup.foodnomads.lunches.RsvpAnswer;
+import ch.kup.foodnomads.lunches.VenuePickedException;
 import ch.kup.foodnomads.lunches.VenueVisitedException;
 import ch.kup.foodnomads.lunches.VoteDirection;
 import ch.kup.foodnomads.members.Member;
@@ -43,7 +47,7 @@ import java.util.UUID;
 
 /**
  * Planning, moving and cancelling Lunches, recording past ones, their Candidate Venues and Votes,
- * RSVPs, and their Lunch Comments.
+ * RSVPs, picking the Venue, marking a Lunch held, and their Lunch Comments.
  */
 @Path("/api/lunches")
 @Produces(MediaType.APPLICATION_JSON)
@@ -137,6 +141,8 @@ public class LunchesResource {
 
     public record MoveRequest(LocalDate date) {}
 
+    public record PickRequest(UUID venueId) {}
+
     @Inject
     Lunches lunches;
 
@@ -212,6 +218,8 @@ public class LunchesResource {
             throw new NotFoundException(e);
         } catch (VenueVisitedException e) {
             return error(Response.Status.CONFLICT, "venue-visited");
+        } catch (VenuePickedException e) {
+            return error(Response.Status.CONFLICT, "venue-picked");
         }
     }
 
@@ -322,6 +330,64 @@ public class LunchesResource {
             return error(Response.Status.CONFLICT, "lunch-not-planned");
         } catch (NotACandidateException e) {
             return error(Response.Status.CONFLICT, "not-a-candidate");
+        } catch (CandidatePickedException e) {
+            return error(Response.Status.CONFLICT, "candidate-picked");
+        }
+    }
+
+    @PUT
+    @Path("{id}/venue")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response pick(@PathParam("id") UUID id, PickRequest request) {
+        currentMember();
+        if (request == null || request.venueId() == null) {
+            return error(Response.Status.BAD_REQUEST, "venue-required");
+        }
+        try {
+            lunches.pick(id, request.venueId());
+            return Response.noContent().build();
+        } catch (LunchNotFoundException e) {
+            throw new NotFoundException(e);
+        } catch (LunchNotPlannedException e) {
+            return error(Response.Status.CONFLICT, "lunch-not-planned");
+        } catch (NotACandidateException e) {
+            return error(Response.Status.CONFLICT, "not-a-candidate");
+        } catch (VenueVisitedException e) {
+            return error(Response.Status.CONFLICT, "venue-visited");
+        }
+    }
+
+    @DELETE
+    @Path("{id}/venue")
+    public Response clearPick(@PathParam("id") UUID id) {
+        currentMember();
+        try {
+            lunches.clearPick(id);
+            return Response.noContent().build();
+        } catch (LunchNotFoundException e) {
+            throw new NotFoundException(e);
+        } catch (LunchNotPlannedException e) {
+            return error(Response.Status.CONFLICT, "lunch-not-planned");
+        }
+    }
+
+    @POST
+    @Path("{id}/held")
+    public Response hold(@PathParam("id") UUID id) {
+        currentMember();
+        try {
+            lunches.hold(id);
+            return Response.noContent().build();
+        } catch (LunchNotFoundException e) {
+            throw new NotFoundException(e);
+        } catch (LunchNotPlannedException e) {
+            return error(Response.Status.CONFLICT, "lunch-not-planned");
+        } catch (LunchNotDueException e) {
+            return error(Response.Status.CONFLICT, "lunch-not-due");
+        } catch (NoVenueException e) {
+            return error(Response.Status.CONFLICT, "no-venue");
+        } catch (VenueVisitedException e) {
+            return error(Response.Status.CONFLICT, "venue-visited");
         }
     }
 

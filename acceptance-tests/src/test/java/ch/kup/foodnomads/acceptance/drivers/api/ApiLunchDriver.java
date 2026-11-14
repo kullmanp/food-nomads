@@ -250,27 +250,46 @@ class ApiLunchDriver implements LunchDriver {
 
     @Override
     public void assertRemoveCandidateRejectedAsPicked(String lunchId, String venue) {
-        throw new UnsupportedOperationException("Not implemented yet");
+        assertRefused(api.delete(candidatesPath(lunchId) + "/" + venueId(venue)), 409, "candidate-picked");
+        candidate(lunchId, venue);
     }
 
     @Override
     public void pick(String lunchId, String venue) {
-        throw new UnsupportedOperationException("Not implemented yet");
+        HttpResponse<String> response = api.put(
+                "api/lunches/" + lunchId + "/venue", ApiClient.newObject().put("venueId", venueId(venue)));
+
+        assertEquals(204, response.statusCode(), "PUT /api/lunches/{id}/venue: " + response.body());
+        JsonNode lunch = lunch(lunchId);
+        assertEquals(venue, lunch.path("venue").path("name").asText(), "venue in " + lunch);
     }
 
     @Override
     public void hold(String lunchId) {
-        throw new UnsupportedOperationException("Not implemented yet");
+        HttpResponse<String> response = api.post(heldPath(lunchId), ApiClient.newObject());
+
+        assertEquals(204, response.statusCode(), "POST /api/lunches/{id}/held: " + response.body());
     }
 
     @Override
     public void assertHoldRejectedAsNotDue(String lunchId) {
-        throw new UnsupportedOperationException("Not implemented yet");
+        assertRefused(api.post(heldPath(lunchId), ApiClient.newObject()), 409, "lunch-not-due");
+        assertStillPlanned(lunchId);
     }
 
     @Override
     public void assertHoldRejectedAsNoVenue(String lunchId) {
-        throw new UnsupportedOperationException("Not implemented yet");
+        assertRefused(api.post(heldPath(lunchId), ApiClient.newObject()), 409, "no-venue");
+        assertStillPlanned(lunchId);
+    }
+
+    private void assertStillPlanned(String lunchId) {
+        JsonNode lunch = lunch(lunchId);
+        assertEquals("planned", lunch.path("state").asText(), "state in " + lunch);
+    }
+
+    private static String heldPath(String lunchId) {
+        return "api/lunches/" + lunchId + "/held";
     }
 
     @Override
