@@ -29,33 +29,37 @@ One meetup of the group on a specific date at one Venue.
 _Avoid_: Visit, event, meeting, outing
 
 **Planned Lunch**:
-A Lunch with a date that has not happened yet. Its Venue may still be undecided.
+A Lunch with a date (no time) that has not happened yet. Any Member can plan one, and several can be planned at once. It starts without a Venue; any Member picks one of its Candidate Venues, and can change the pick while it is planned.
 _Avoid_: Upcoming, scheduled, draft
 
 **Held Lunch**:
-A Lunch that took place. Holding a Lunch turns its Venue into a Visited Venue.
+A Lunch that took place. Any Member marks a Planned Lunch as held, on or after its date and only once it has a Venue; nothing happens automatically. A Lunch from before the app can be recorded directly as held, with its date and Venue. Holding a Lunch turns its Venue into a Visited Venue.
 _Avoid_: Past, completed, done
 
 **Cancelled Lunch**:
-A Lunch that was called off. It leaves its Venue unvisited.
+A Planned Lunch that any Member called off. It stays visible with its comments, and leaves its Venue and Candidate Venues unvisited.
 
 **Next Lunch**:
 The earliest Planned Lunch.
 
+**Candidate Venue**:
+An unvisited Venue a Member put up for a Planned Lunch. Any Member can add one, and remove one that isn't picked, together with its Votes. A new Planned Lunch has none. A Venue can be a Candidate Venue of several Planned Lunches, but picked for only one at a time.
+_Avoid_: Proposal, option, suggestion
+
 **RSVP**:
-A Member's answer (in or out) about attending a Planned Lunch.
+A Member's answer, in or out, about attending a Planned Lunch. A Member who hasn't answered has no RSVP. Conditions ("only if we stay near X") go into a Lunch Comment.
 _Avoid_: Registration, attendance
 
 **Vote**:
-A Member's endorsement of a Venue as a candidate for a future Lunch.
+A Member's up or down on a Candidate Venue of a Planned Lunch. A Member has at most one Vote per Candidate Venue and can change or withdraw it. Votes guide the pick; they don't decide it.
 _Avoid_: Like, upvote, star
 
 **Venue Comment**:
-A Member's remark on a Venue, typically before any Lunch there.
+A Member's remark on a Venue itself ("buffet only at noon"), independent of any Lunch.
 
 **Lunch Comment**:
-A Member's remark on a Lunch, typically the write-up afterwards.
-_Avoid_: Review
+A Member's remark on a Lunch, before it (arranging) or after it (the write-up). A Lunch's comments read as a chat, oldest first.
+_Avoid_: Chat message, review
 
 **Photo**:
 A picture a Member took at a Lunch, attached to that Lunch.
