@@ -39,6 +39,21 @@ public interface LunchDriver {
     void assertComment(String lunchId, String author, String text);
 
     /**
+     * Records a Lunch from before the app on this date at the Venue with this name, as the
+     * logged-in Member. Fails unless it was accepted, and returns its id.
+     */
+    String recordPast(LocalDate date, String venue);
+
+    /** Fails unless recording a past Lunch at the Venue with this name is refused because it's visited. */
+    void assertRecordPastRejectedAsVenueVisited(LocalDate date, String venue);
+
+    /** Fails unless recording a past Lunch on this date is refused because the date isn't before today. */
+    void assertRecordPastRejectedAsDateNotPast(LocalDate date, String venue);
+
+    /** Fails unless the Lunch with this id is a Held Lunch, on this date, at the Venue with this name. */
+    void assertHeld(String lunchId, LocalDate date, String venue);
+
+    /**
      * Fails unless this driver, with no Member logged in, is kept away from the Lunches: the UI
      * sends it to login, the API answers 401.
      */

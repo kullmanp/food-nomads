@@ -44,6 +44,16 @@ class ApiVenueDriver implements VenueDriver {
     }
 
     @Override
+    public void assertVisited(String name) {
+        throw new UnsupportedOperationException("Not implemented yet: Visited Venues are marked on /api/venues");
+    }
+
+    @Override
+    public void assertNotVisited(String name) {
+        throw new UnsupportedOperationException("Not implemented yet: Visited Venues are marked on /api/venues");
+    }
+
+    @Override
     public void assertNotAccessibleWithoutLogin() {
         HttpResponse<String> response = api.get("api/venues");
 

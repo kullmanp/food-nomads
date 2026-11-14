@@ -43,6 +43,18 @@ public class VenuesDsl {
                 aliases.realName(params.value("name")), params.value("address"), params.value("proposedBy"));
     }
 
+    /** Fails unless the Venue list marks this Venue as visited. */
+    public void assertVisited(String... args) {
+        Params params = Params.parse(args, Params.required("name"));
+        driver.assertVisited(aliases.realName(params.value("name")));
+    }
+
+    /** Fails unless the Venue list shows this Venue as not visited. */
+    public void assertNotVisited(String... args) {
+        Params params = Params.parse(args, Params.required("name"));
+        driver.assertNotVisited(aliases.realName(params.value("name")));
+    }
+
     /** Fails unless the Venue list is refused to someone who isn't logged in. */
     public void assertNotAccessibleWithoutLogin() {
         driver.assertNotAccessibleWithoutLogin();

@@ -17,6 +17,12 @@ public interface VenueDriver {
      */
     void assertCandidate(String name, String address, String proposedBy);
 
+    /** Fails unless the Venue list marks the Venue with this name as visited. */
+    void assertVisited(String name);
+
+    /** Fails unless the Venue list shows the Venue with this name, not marked as visited. */
+    void assertNotVisited(String name);
+
     /**
      * Fails unless this driver, with no Member logged in, is kept away from the Venue list: the
      * UI sends it to login, the API answers 401.

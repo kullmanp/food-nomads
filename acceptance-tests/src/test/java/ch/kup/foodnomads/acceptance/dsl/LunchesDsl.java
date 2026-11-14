@@ -104,6 +104,37 @@ public class LunchesDsl {
         driver.assertComment(idOf(params.value("lunch")), members.realName(params.value("by")), params.value("text"));
     }
 
+    /**
+     * Records a Lunch from before the app as the logged-in Member, on {@code date} at
+     * {@code venue}, and remembers it under {@code lunch}. With {@code expect: venueVisited} or
+     * {@code expect: dateNotPast}, fails unless recording is refused for that reason.
+     */
+    public void recordPast(String... args) {
+        Params params = Params.parse(
+                args,
+                Params.required("lunch"),
+                Params.required("date"),
+                Params.required("venue"),
+                Params.optional("expect", "success"));
+        LocalDate date = date(params.value("date"));
+        String venue = venueAliases.realName(params.value("venue"));
+        switch (params.value("expect")) {
+            case "success" -> idByAlias.put(params.value("lunch"), driver.recordPast(date, venue));
+            case "venueVisited" -> driver.assertRecordPastRejectedAsVenueVisited(date, venue);
+            case "dateNotPast" -> driver.assertRecordPastRejectedAsDateNotPast(date, venue);
+            default ->
+                throw new IllegalArgumentException("Unknown expect '" + params.value("expect")
+                        + "', expected success, venueVisited or dateNotPast");
+        }
+    }
+
+    /** Fails unless {@code lunch} is a Held Lunch, on {@code date}, at {@code venue}. */
+    public void assertHeld(String... args) {
+        Params params = Params.parse(args, Params.required("lunch"), Params.required("date"), Params.required("venue"));
+        driver.assertHeld(
+                idOf(params.value("lunch")), date(params.value("date")), venueAliases.realName(params.value("venue")));
+    }
+
     /** Fails unless the Lunches are refused to someone who isn't logged in. */
     public void assertNotAccessibleWithoutLogin() {
         driver.assertNotAccessibleWithoutLogin();
@@ -112,7 +143,7 @@ public class LunchesDsl {
     private String idOf(String alias) {
         String id = idByAlias.get(alias);
         if (id == null) {
-            throw new IllegalArgumentException("No Lunch planned with alias '" + alias + "'");
+            throw new IllegalArgumentException("No Lunch planned or recorded with alias '" + alias + "'");
         }
         return id;
     }

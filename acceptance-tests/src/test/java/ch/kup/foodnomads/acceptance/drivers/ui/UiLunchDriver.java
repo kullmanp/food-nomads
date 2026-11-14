@@ -128,6 +128,26 @@ class UiLunchDriver implements LunchDriver {
     }
 
     @Override
+    public String recordPast(LocalDate date, String venue) {
+        throw new UnsupportedOperationException("Not implemented yet: records a past Lunch on /lunches");
+    }
+
+    @Override
+    public void assertRecordPastRejectedAsVenueVisited(LocalDate date, String venue) {
+        throw new UnsupportedOperationException("Not implemented yet: a Visited Venue is refused on /lunches");
+    }
+
+    @Override
+    public void assertRecordPastRejectedAsDateNotPast(LocalDate date, String venue) {
+        throw new UnsupportedOperationException("Not implemented yet: today or later is refused on /lunches");
+    }
+
+    @Override
+    public void assertHeld(String lunchId, LocalDate date, String venue) {
+        throw new UnsupportedOperationException("Not implemented yet: a Held Lunch is shown on /lunches");
+    }
+
+    @Override
     public void assertNotAccessibleWithoutLogin() {
         page.navigate(baseUrl.resolve("lunches").toString());
 

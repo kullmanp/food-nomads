@@ -1,6 +1,6 @@
 # 02 Record a Lunch from before the app
 
-Status: ready-for-agent
+Status: claimed
 Blocked by: 01
 Spec: [../spec.md](../spec.md)
 

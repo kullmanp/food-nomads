@@ -109,6 +109,26 @@ class ApiLunchDriver implements LunchDriver {
     }
 
     @Override
+    public String recordPast(LocalDate date, String venue) {
+        throw new UnsupportedOperationException("Not implemented yet: records a past Lunch on /api/lunches/past");
+    }
+
+    @Override
+    public void assertRecordPastRejectedAsVenueVisited(LocalDate date, String venue) {
+        throw new UnsupportedOperationException("Not implemented yet: a Visited Venue is refused on /api/lunches/past");
+    }
+
+    @Override
+    public void assertRecordPastRejectedAsDateNotPast(LocalDate date, String venue) {
+        throw new UnsupportedOperationException("Not implemented yet: today or later is refused on /api/lunches/past");
+    }
+
+    @Override
+    public void assertHeld(String lunchId, LocalDate date, String venue) {
+        throw new UnsupportedOperationException("Not implemented yet: a Held Lunch is shown on /api/lunches");
+    }
+
+    @Override
     public void assertNotAccessibleWithoutLogin() {
         HttpResponse<String> response = api.get("api/lunches");
 
