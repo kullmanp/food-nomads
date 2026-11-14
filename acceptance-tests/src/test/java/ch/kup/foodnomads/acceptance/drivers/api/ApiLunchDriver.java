@@ -203,6 +203,31 @@ class ApiLunchDriver implements LunchDriver {
     }
 
     @Override
+    public void rsvp(String lunchId, String answer) {
+        throw new UnsupportedOperationException("Not implemented yet");
+    }
+
+    @Override
+    public void assertRsvpRejectedAsNotPlanned(String lunchId, String answer) {
+        throw new UnsupportedOperationException("Not implemented yet");
+    }
+
+    @Override
+    public void assertRsvps(String lunchId, Set<String> in, Set<String> out) {
+        throw new UnsupportedOperationException("Not implemented yet");
+    }
+
+    @Override
+    public void move(String lunchId, LocalDate date) {
+        throw new UnsupportedOperationException("Not implemented yet");
+    }
+
+    @Override
+    public void assertMoveRejectedAsInThePast(String lunchId, LocalDate date) {
+        throw new UnsupportedOperationException("Not implemented yet");
+    }
+
+    @Override
     public void assertNotAccessibleWithoutLogin() {
         HttpResponse<String> response = api.get("api/lunches");
 

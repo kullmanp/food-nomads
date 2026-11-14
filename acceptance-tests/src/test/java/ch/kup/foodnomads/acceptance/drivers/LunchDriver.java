@@ -81,6 +81,24 @@ public interface LunchDriver {
     /** Fails unless the Candidate Venue with this name of the Lunch with this id shows these numbers of Votes. */
     void assertVotes(String lunchId, String venue, int up, int down);
 
+    /** Answers {@code in} or {@code out} for the Lunch with this id, as the logged-in Member, and fails unless it was accepted. */
+    void rsvp(String lunchId, String answer);
+
+    /** Fails unless answering for the Lunch with this id is refused because the Lunch isn't planned. */
+    void assertRsvpRejectedAsNotPlanned(String lunchId, String answer);
+
+    /**
+     * Fails unless the Lunch with this id shows exactly the Members with these display names as in
+     * and as out.
+     */
+    void assertRsvps(String lunchId, Set<String> in, Set<String> out);
+
+    /** Moves the Lunch with this id to this date, as the logged-in Member, and fails unless it was accepted. */
+    void move(String lunchId, LocalDate date);
+
+    /** Fails unless moving the Lunch with this id to this date is refused because the date is before today. */
+    void assertMoveRejectedAsInThePast(String lunchId, LocalDate date);
+
     /**
      * Fails unless this driver, with no Member logged in, is kept away from the Lunches: the UI
      * sends it to login, the API answers 401.

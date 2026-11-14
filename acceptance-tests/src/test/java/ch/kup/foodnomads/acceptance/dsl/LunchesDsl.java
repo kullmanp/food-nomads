@@ -208,6 +208,55 @@ public class LunchesDsl {
                 Integer.parseInt(params.value("down")));
     }
 
+    /**
+     * Answers {@code in} or {@code out} for {@code lunch}, as the logged-in Member. With
+     * {@code expect: notPlanned}, fails unless the answer is refused because the Lunch isn't planned.
+     */
+    public void rsvp(String... args) {
+        Params params = Params.parse(
+                args, Params.required("lunch"), Params.required("answer"), Params.optional("expect", "success"));
+        String id = idOf(params.value("lunch"));
+        String answer = params.value("answer");
+        if (!"in".equals(answer) && !"out".equals(answer)) {
+            throw new IllegalArgumentException("Unknown answer '" + answer + "', expected in or out");
+        }
+        switch (params.value("expect")) {
+            case "success" -> driver.rsvp(id, answer);
+            case "notPlanned" -> driver.assertRsvpRejectedAsNotPlanned(id, answer);
+            default ->
+                throw new IllegalArgumentException(
+                        "Unknown expect '" + params.value("expect") + "', expected success or notPlanned");
+        }
+    }
+
+    /**
+     * Fails unless {@code lunch} shows exactly the Members in {@code in} as in and those in
+     * {@code out} as out (comma-separated Member names, in any order, empty for nobody).
+     */
+    public void assertRsvps(String... args) {
+        Params params = Params.parse(args, Params.required("lunch"), Params.required("in"), Params.required("out"));
+        driver.assertRsvps(
+                idOf(params.value("lunch")), memberNames(params.value("in")), memberNames(params.value("out")));
+    }
+
+    /**
+     * Moves {@code lunch} to {@code date}, as the logged-in Member. With {@code expect: dateInPast},
+     * fails unless the move is refused because the date is before today.
+     */
+    public void move(String... args) {
+        Params params = Params.parse(
+                args, Params.required("lunch"), Params.required("date"), Params.optional("expect", "success"));
+        String id = idOf(params.value("lunch"));
+        LocalDate date = date(params.value("date"));
+        switch (params.value("expect")) {
+            case "success" -> driver.move(id, date);
+            case "dateInPast" -> driver.assertMoveRejectedAsInThePast(id, date);
+            default ->
+                throw new IllegalArgumentException(
+                        "Unknown expect '" + params.value("expect") + "', expected success or dateInPast");
+        }
+    }
+
     /** Fails unless the Lunches are refused to someone who isn't logged in. */
     public void assertNotAccessibleWithoutLogin() {
         driver.assertNotAccessibleWithoutLogin();
@@ -227,6 +276,15 @@ public class LunchesDsl {
                 .map(String::strip)
                 .filter(alias -> !alias.isEmpty())
                 .map(venueAliases::realName)
+                .collect(Collectors.toUnmodifiableSet());
+    }
+
+    /** The real display names of these comma-separated Member names. */
+    private Set<String> memberNames(String names) {
+        return Arrays.stream(names.split(","))
+                .map(String::strip)
+                .filter(name -> !name.isEmpty())
+                .map(members::realName)
                 .collect(Collectors.toUnmodifiableSet());
     }
 

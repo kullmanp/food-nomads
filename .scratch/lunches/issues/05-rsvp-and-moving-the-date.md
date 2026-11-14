@@ -1,6 +1,6 @@
 # 05 RSVP and moving the date
 
-Status: ready-for-agent
+Status: claimed
 Blocked by: 01
 Spec: [../spec.md](../spec.md)
 
